@@ -191,7 +191,10 @@ function renderRoom() {
     room.style.setProperty('--ox', ox + 'px'); room.style.setProperty('--oy', oy + 'px');
     document.body.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--glow').trim();
     arriving = !reduce;
-    room.classList.add('entering');
+    // freeze everything that repaints (static, flicker, blended light) so only one layer moves
+    cancelAnimationFrame(raf); clearInterval(rot);
+    room.classList.add('zooming');
+    requestAnimationFrame(() => requestAnimationFrame(() => room.classList.add('entering')));
     setTimeout(() => { location.hash = '#/board'; }, reduce ? 0 : 1500);
   }
 
