@@ -232,9 +232,10 @@ button { cursor: pointer; }
 }
 .screen-content { position: relative; z-index: 4; padding: 0 8%; }
 .screen-text {
-  font-weight: 700; font-size: 11cqi; line-height: .98; letter-spacing: -.01em; color: var(--ink);
+  font-weight: 700; font-size: 8.2cqi; line-height: 1.1; letter-spacing: -.01em; color: var(--ink);
   text-shadow: 0 0 .25em rgba(255,255,255,.7);
-  min-height: 2em;
+  white-space: nowrap; /* one line, so the text doesn't jump while it types */
+  min-height: 1.1em;
 }
 .screen-text .caret { display: inline-block; width: .08em; height: .85em; background: var(--ink); vertical-align: -.08em; margin-left: .05em; animation: blink 1s steps(1) infinite; }
 .screen-buttons { display: flex; gap: 4cqi; justify-content: center; margin-top: 6cqi; opacity: 0; transform: translateY(1em); transition: opacity .6s var(--ease), transform .6s var(--ease); }
