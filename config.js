@@ -9,8 +9,8 @@
 //  (everything is saved only in your own browser).
 // ------------------------------------------------------------------
 window.MOVIE_NIGHT_CONFIG = {
-  SUPABASE_URL: '',
-  SUPABASE_ANON_KEY: '',
+  SUPABASE_URL: 'https://tnidzrwupmnnqjijsrdo.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_dohvgl5klUgbaRtvuVz32w_sqT71AQS',
   TMDB_API_KEY: '',
 
   // the name on the little plaque above the tv
