@@ -1,6 +1,7 @@
 import { createStore, friendlyError, LIMITS, lastNickname, hostKeyStore } from './store.js';
 import { searchFilms } from './search.js';
 import { THEMES, COLOR_SLOTS, themeColors, applyTheme } from './themes.js';
+import { ROOM_STYLES, ROOM_TOGGLES, roomConfig, applyRoom } from './room.js';
 
 /* ---------------- tiny DOM helper (always textContent, never innerHTML for data) ---------------- */
 function h(tag, props, ...kids) {
@@ -63,6 +64,7 @@ let cleanupRoute = () => {};
 let pendingRender = false;
 let arriving = false; // true right after zooming through the tv
 let previewColors = null; // unsaved colours the host is trying out on the host page
+let previewRoom = null;   // furniture shown in the host's preview before the save lands
 const applyEventTheme = () => { if (data.event) applyTheme(data.event.theme, previewColors || data.event.colors); };
 
 async function reload() {
@@ -95,8 +97,23 @@ function softRerender() {
   if (document.querySelector('.modal-back')) { pendingRender = true; return; }
   const y = window.scrollY;
   if (route() === 'board') { renderBoard(true); window.scrollTo({ top: y }); }
+  if (route() === 'room' || route() === '') applyRoom($app.querySelector('.room'), previewRoom || data.event?.room);
 }
 document.addEventListener('focusout', () => setTimeout(() => { if (pendingRender) { pendingRender = false; softRerender(); } }, 50));
+
+// the host page shows the room in an iframe and sends it unsaved choices to preview
+window.addEventListener('message', e => {
+  if (e.origin !== location.origin || e.source !== window.parent || e.data?.type !== 'mn-preview') return;
+  previewColors = e.data.colors || null;
+  previewRoom = e.data.room || null;
+  applyEventTheme();
+  applyRoom($app.querySelector('.room'), previewRoom || data.event?.room);
+});
+let previewFrame = null;
+let hostRoomDraft = null;
+function postPreview() {
+  try { previewFrame?.contentWindow?.postMessage({ type: 'mn-preview', room: hostRoomDraft, colors: previewColors }, location.origin); } catch {}
+}
 
 /* =====================================================================
    THE ROOM
@@ -120,16 +137,38 @@ function renderRoom() {
   const screen = h('div', { class: 'screen tuning' }, canvas, h('div', { class: 'screen-content' }, text, buttons, sub));
   const knob1 = h('button', { class: 'knob', 'aria-label': 'change channel', onclick: () => channel() });
   const knob2 = h('button', { class: 'knob', 'aria-label': 'volume', onclick: e => e.currentTarget.classList.toggle('turned') });
+  /* little things to poke at (only in this browser) */
+  const poke = (el, cls) => { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
+  const pokeable = (cls, anim, ...kids) => h('div', { class: cls, 'aria-hidden': 'true', onclick: e => poke(e.currentTarget, anim) }, ...kids);
+  const many = (n, props) => Array.from({ length: n }, () => h('i', props));
+  const toggleLights = () => room.classList.toggle('lights-off');
+  const lamp = (cls, side) => h('div', { class: cls + ' ' + side, 'aria-hidden': 'true', title: 'lights', onclick: toggleLights }, h('i', { class: 'glow' }));
+  const plant = side => pokeable('plant ' + side, 'wiggle', many(6, { class: 'leaf' }), h('i', { class: 'pot' }));
+  const books = n => Array.from({ length: n }, () => h('i', { class: 'book', onclick: e => e.currentTarget.classList.toggle('out') }));
+  const garland = h('div', { class: 'garland', 'aria-hidden': 'true', onclick: () => {
+    const modes = ['', 'twinkle', 'off']; garland.dataset.mode = modes[(modes.indexOf(garland.dataset.mode || '') + 1) % modes.length];
+  } }, Array.from({ length: 18 }, (_, i) => {
+    // 6 swags of wire, 3 bulbs on each, sitting on the curve
+    const t = [1 / 6, 1 / 2, 5 / 6][i % 3], tile = Math.floor(i / 3);
+    return h('i', { style: `left:${((tile + t) / 6 * 100).toFixed(2)}%;top:${(3.2 * t * (1 - t) * 100).toFixed(1)}%;animation-delay:${(i * 0.37) % 1.8}s` });
+  }));
+
   const room = h('section', { class: 'room', 'aria-label': 'a cosy room with a glowing television' },
     h('div', { class: 'wall' }),
     h('div', { class: 'molding' }),
+    garland,
     h('div', { class: 'plaque' }, cfg.CLUB_NAME || 'the picture club', h('small', null, ev ? 'night no. ' + ev.number : 'est. 2026')),
-    h('div', { class: 'sconce l', 'aria-hidden': 'true' }, h('i', { class: 'glow' })),
-    h('div', { class: 'sconce r', 'aria-hidden': 'true' }, h('i', { class: 'glow' })),
+    pokeable('window', 'shoot', h('div', { class: 'sky' }, h('i', { class: 'moon' }), h('i', { class: 'shooting' })), h('i', { class: 'curtain l' }), h('i', { class: 'curtain r' })),
+    h('div', { class: 'shelf', 'aria-hidden': 'true' }, h('div', { class: 'row' }, books(7)), h('div', { class: 'row' }, books(4), h('i', { class: 'vase' }))),
+    lamp('sconce', 'l'), lamp('sconce', 'r'),
     h('div', { class: 'wainscot' }),
     h('div', { class: 'floor' }, h('div', { class: 'rug' })),
-    h('div', { class: 'plant l', 'aria-hidden': 'true' }, h('i', { class: 'leaf' }), h('i', { class: 'leaf' }), h('i', { class: 'leaf' }), h('i', { class: 'leaf' }), h('i', { class: 'pot' })),
-    h('div', { class: 'plant r', 'aria-hidden': 'true' }, h('i', { class: 'leaf' }), h('i', { class: 'leaf' }), h('i', { class: 'leaf' }), h('i', { class: 'leaf' }), h('i', { class: 'pot' })),
+    lamp('floorlamp', 'l'), lamp('floorlamp', 'r'),
+    pokeable('chair', 'rock', h('i', { class: 'cback' }), h('i', { class: 'cseat' }), h('i', { class: 'carm l' }), h('i', { class: 'carm r' }), h('i', { class: 'cleg l' }), h('i', { class: 'cleg r' })),
+    h('div', { class: 'record', 'aria-hidden': 'true', title: 'play a record', onclick: e => e.currentTarget.classList.toggle('playing') },
+      h('i', { class: 'cab' }), h('i', { class: 'deck' }), h('i', { class: 'disc' }), h('i', { class: 'tonearm' }),
+      h('span', { class: 'notes' }, h('b', null, '♪'), h('b', null, '♫'), h('b', null, '♪'))),
+    plant('l'), plant('r'),
     h('div', { class: 'tv' },
       h('div', { class: 'antenna', 'aria-hidden': 'true' }, h('i'), h('i'), h('b')),
       h('div', { class: 'cabinet' },
@@ -140,13 +179,15 @@ function renderRoom() {
     h('div', { class: 'spill', 'aria-hidden': 'true' }),
     h('div', { class: 'sofa', 'aria-hidden': 'true' },
       h('div', { class: 'back' }), h('div', { class: 'arm l' }), h('div', { class: 'arm r' }),
-      h('div', { class: 'pillow l' }), h('div', { class: 'pillow r' }), h('div', { class: 'blanket' })),
+      pokeable('pillow l', 'fluff'), pokeable('pillow r', 'fluff'), pokeable('blanket', 'swish'),
+      pokeable('popcorn', 'pop', many(6, { class: 'k' }), h('i', { class: 'bowl' }))),
     h('nav', { class: 'room-nav' }, h('a', { href: '#/archive' }, 'archive')),
     h('div', { class: 'caption' },
       h('span', null, ev?.title || 'movie night'),
       h('span', null, ev?.location || 'somewhere cosy'),
       h('span', null, when)),
     h('div', { class: 'flash' }));
+  applyRoom(room, previewRoom || ev?.room);
   $app.replaceChildren(room);
 
   /* static noise */
@@ -614,6 +655,8 @@ async function renderHost(quiet = false) {
           ev.final_date ? h('button', { class: 'btn small', type: 'button', onclick: () => save({ final_date: '', final_time: '' }, 'date poll reopened.') }, 'reopen the poll') : null,
           h('button', { class: 'btn primary', type: 'button', onclick: () => dateIn.value ? save({ final_date: dateIn.value, final_time: timeIn.value }, 'date set. the board says it’s on.') : toast('pick a date first.') }, 'set the date'))),
 
+      roomPanel(ev, key),
+
       h('div', { class: 'card' },
         h('h3', null, 'the vote'),
         h('p', { class: 'note-small', style: 'margin:0 0 12px' }, ev.status === 'open' ? 'open — people can add films and give tickets.' : 'closed — the pool is frozen.'),
@@ -642,7 +685,56 @@ async function renderHost(quiet = false) {
           store.demo ? h('button', { class: 'linkish', style: 'color:var(--ink)', type: 'button', onclick: async () => { store.reset(); hostKeyStore.clear(); await reload(); toast('demo reset.'); hostLogin(); } }, 'reset demo data') : null)))));
   $app.replaceChildren(page);
   // leaving the host page drops any colours that were tried but not saved
-  cleanupRoute = () => { if (previewColors) { previewColors = null; applyEventTheme(); } };
+  cleanupRoute = () => { previewFrame = null; hostRoomDraft = null; if (previewColors) { previewColors = null; applyEventTheme(); } };
+}
+
+// furniture: styles + what's in the room, with a live preview of the room itself
+function roomPanel(ev, key) {
+  const cur = roomConfig(ev.room);
+  hostRoomDraft = cur;
+  let t;
+  const commit = () => {
+    postPreview();
+    clearTimeout(t);
+    t = setTimeout(async () => {
+      try { await store.hostUpdate(key, ev.id, { room: { ...cur } }); if (data.event) data.event.room = { ...cur }; toast('room updated.'); }
+      catch (e) { toast(friendlyError(e)); }
+    }, 450);
+  };
+  const frame = h('iframe', { src: './#/', title: 'room preview', tabindex: '-1', 'aria-hidden': 'true' });
+  previewFrame = frame;
+  frame.addEventListener('load', () => { postPreview(); setTimeout(postPreview, 800); });
+  const box = h('div', { class: 'room-preview' }, frame);
+  new ResizeObserver(() => { frame.style.transform = `scale(${box.clientWidth / 1280})`; }).observe(box);
+
+  const styleRows = ROOM_STYLES.map(st => h('div', { class: 'room-row' },
+    h('span', { class: 'k' }, st.label),
+    h('div', { class: 'chips' }, st.options.map(([v, label]) => h('button', {
+      type: 'button', class: 'chip' + (cur[st.key] === v ? ' on' : ''),
+      onclick: e => {
+        cur[st.key] = v;
+        for (const b of e.currentTarget.parentNode.children) b.classList.toggle('on', b === e.currentTarget);
+        commit();
+      },
+    }, label)))));
+  const toggles = h('div', { class: 'chips' }, ROOM_TOGGLES.map(([k, label]) => h('button', {
+    type: 'button', class: 'chip' + (cur[k] === 'on' ? ' on' : ''), 'aria-pressed': String(cur[k] === 'on'),
+    onclick: e => {
+      cur[k] = cur[k] === 'on' ? 'off' : 'on';
+      e.currentTarget.classList.toggle('on', cur[k] === 'on');
+      e.currentTarget.setAttribute('aria-pressed', String(cur[k] === 'on'));
+      commit();
+    },
+  }, label)));
+
+  return h('div', { class: 'card wide' },
+    h('h3', null, 'the room'),
+    h('p', { class: 'note-small', style: 'margin:0 0 12px' }, 'pick the furniture and what’s in the room. changes save by themselves and show up for everyone. guests can tap the lamps, plants, record player and more.'),
+    h('div', { class: 'room-editor' },
+      box,
+      h('div', null,
+        styleRows,
+        h('div', { class: 'room-row' }, h('span', { class: 'k' }, 'in the room'), toggles))));
 }
 
 // fine-tune the current theme colour by colour; previews live, saves for everyone
@@ -662,6 +754,7 @@ function colorPicker(ev, save) {
       draft[k] = input.value.toLowerCase();
       previewColors = { ...draft };
       applyTheme(ev.theme, previewColors);
+      postPreview();
       saveBtn.disabled = false;
     });
     return h('label', { class: 'swatch' }, input, h('span', null, label));

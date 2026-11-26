@@ -133,7 +133,7 @@ button { cursor: pointer; }
 
 /* wall details */
 .plaque {
-  position: absolute; left: 50%; top: calc(var(--u)*4.6); transform: translateX(-50%); z-index: 1;
+  position: absolute; left: 50%; top: calc(var(--u)*4.6); transform: translateX(-50%); z-index: 3;
   padding: calc(var(--u)*.75) calc(var(--u)*2.4);
   background: linear-gradient(#e9cf8f, #c9a557); color: #3b2c14;
   border-radius: 2px; box-shadow: 0 2px 0 #8a6a2a, 0 calc(var(--u)*.8) calc(var(--u)*1.6) rgba(0,0,0,.35);
@@ -340,6 +340,265 @@ button { cursor: pointer; }
   border-radius: calc(var(--u)*1) calc(var(--u)*1) 0 0;
 }
 
+/* ==========================================================
+   FURNITURE OPTIONS (data-* on .room, set from the host page)
+   ========================================================== */
+.room[data-plaque=off] .plaque,
+.room[data-pillows=off] .sofa .pillow,
+.room[data-blanket=off] .sofa .blanket,
+.room[data-sofa=none] .sofa,
+.room[data-rug=none] .rug,
+.room[data-plants=none] .plant,
+.room:not([data-lamps=sconces]) .sconce,
+.room:not([data-lamps=floor]) .floorlamp,
+.room:not([data-window=on]) .window,
+.room:not([data-shelf=on]) .shelf,
+.room:not([data-record=on]) .record,
+.room:not([data-garland=on]) .garland,
+.room:not([data-chair=on]) .chair,
+.room:not([data-popcorn=on]) .popcorn { display: none; }
+
+/* things guests can poke */
+.room :is(.sconce, .floorlamp, .plant, .window, .book, .record, .garland, .chair, .pillow, .blanket, .popcorn) { cursor: pointer; }
+
+/* lights off: the room sinks into the tv glow (fairy lights stay on) */
+.room :is(.wall, .molding, .plaque, .window, .shelf, .wainscot, .floor, .chair, .record, .plant, .sofa, .sconce, .floorlamp) { transition: filter .8s ease; }
+.room.lights-off :is(.wall, .molding, .plaque, .window, .shelf, .wainscot, .floor, .chair, .record, .plant, .sofa) { filter: brightness(.5) saturate(.9); }
+.room.lights-off :is(.sconce, .floorlamp) { filter: brightness(.7); }
+.room :is(.sconce, .floorlamp) .glow { transition: opacity .8s ease; }
+.room.lights-off :is(.sconce, .floorlamp) .glow { opacity: 0; animation: none; }
+
+/* ---------- sofa styles ---------- */
+.room[data-sofa=leather] .sofa .back {
+  background:
+    radial-gradient(ellipse 26% 20% at 28% 16%, rgba(255,255,255,.22), transparent 70%),
+    radial-gradient(ellipse 26% 20% at 72% 18%, rgba(255,255,255,.15), transparent 70%),
+    radial-gradient(circle, rgba(0,0,0,.22) 0 5%, rgba(0,0,0,.08) 9%, transparent 22%) calc(var(--u)*2.2) calc(var(--u)*3.6) / calc(var(--u)*7) calc(var(--u)*4.8),
+    linear-gradient(90deg, rgba(0,0,0,.32), transparent 14%, transparent 86%, rgba(0,0,0,.32)),
+    linear-gradient(color-mix(in srgb, var(--fabric) 68%, white) 0, var(--fabric) 14%, color-mix(in srgb, var(--fabric) 48%, black));
+}
+.room[data-sofa=leather] .sofa .arm {
+  background:
+    radial-gradient(ellipse 40% 18% at 45% 12%, rgba(255,255,255,.25), transparent 70%),
+    linear-gradient(90deg, rgba(0,0,0,.28), transparent 35%, transparent 70%, rgba(0,0,0,.34)),
+    linear-gradient(color-mix(in srgb, var(--fabric) 72%, white), var(--fabric) 22%, color-mix(in srgb, var(--fabric) 48%, black));
+}
+.room[data-sofa=plaid] .sofa :is(.back, .arm) {
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 0, color-mix(in srgb, var(--glow) 18%, transparent), transparent 70%),
+    linear-gradient(90deg, rgba(0,0,0,.26), transparent 14%, transparent 86%, rgba(0,0,0,.26)),
+    repeating-linear-gradient(90deg, transparent 0 calc(var(--u)*2.6), color-mix(in srgb, var(--rug3) 42%, transparent) calc(var(--u)*2.6) calc(var(--u)*2.9), transparent calc(var(--u)*2.9) calc(var(--u)*4.2), rgba(0,0,0,.22) calc(var(--u)*4.2) calc(var(--u)*5.4)),
+    repeating-linear-gradient(0deg, transparent 0 calc(var(--u)*2.6), color-mix(in srgb, var(--rug3) 42%, transparent) calc(var(--u)*2.6) calc(var(--u)*2.9), transparent calc(var(--u)*2.9) calc(var(--u)*4.2), rgba(0,0,0,.22) calc(var(--u)*4.2) calc(var(--u)*5.4)),
+    linear-gradient(color-mix(in srgb, var(--fabric) 85%, white), var(--fabric) 18%, color-mix(in srgb, var(--fabric) 65%, black));
+}
+
+/* ---------- rug styles ---------- */
+.room[data-rug=persian] .rug {
+  background:
+    radial-gradient(ellipse 55% 50% at 50% 48%, rgba(255,244,220,.10), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.06) 0 1px, transparent 1px 3px),
+    radial-gradient(circle, color-mix(in srgb, var(--r3) 45%, transparent) 0 10%, transparent 13%) 0 0 / calc(var(--u)*2.4) calc(var(--u)*2.4),
+    repeating-linear-gradient(45deg, transparent 0 calc(var(--u)*1.7), color-mix(in srgb, var(--r2) 45%, transparent) calc(var(--u)*1.7) calc(var(--u)*1.95)),
+    repeating-linear-gradient(-45deg, transparent 0 calc(var(--u)*1.7), color-mix(in srgb, var(--r2) 45%, transparent) calc(var(--u)*1.7) calc(var(--u)*1.95)),
+    var(--r1);
+  box-shadow:
+    inset 0 0 0 calc(var(--u)*.6) var(--r2), inset 0 0 0 calc(var(--u)*.85) var(--r3),
+    inset 0 0 0 calc(var(--u)*2) var(--r2), inset 0 0 0 calc(var(--u)*2.25) var(--r3),
+    inset 0 0 0 calc(var(--u)*3.4) color-mix(in srgb, var(--r1) 70%, black), inset 0 0 0 calc(var(--u)*3.6) var(--r3),
+    inset 0 0 calc(var(--u)*7) rgba(0,0,0,.28), 0 calc(var(--u)*.6) calc(var(--u)*1.4) rgba(0,0,0,.4);
+}
+.room[data-rug=round] .rug {
+  width: calc(var(--u)*58); height: calc(var(--u)*34); border-radius: 50%;
+  background:
+    repeating-linear-gradient(60deg, rgba(0,0,0,.07) 0 2px, transparent 2px 5px),
+    repeating-radial-gradient(ellipse at center,
+      var(--r1) 0 calc(var(--u)*1.1), var(--r3) calc(var(--u)*1.1) calc(var(--u)*1.6),
+      var(--r2) calc(var(--u)*1.6) calc(var(--u)*2.7), color-mix(in srgb, var(--r3) 55%, var(--r1)) calc(var(--u)*2.7) calc(var(--u)*3.3));
+  box-shadow: inset 0 0 calc(var(--u)*5) rgba(0,0,0,.28), 0 calc(var(--u)*.6) calc(var(--u)*1.4) rgba(0,0,0,.4);
+}
+.room[data-rug=round] .rug::before, .room[data-rug=round] .rug::after { display: none; }
+
+/* ---------- plant styles ---------- */
+.plant { transform-origin: 50% 100%; }
+.plant.wiggle { animation: wiggle .9s ease-in-out; }
+@keyframes wiggle { 25% { rotate: -4deg; } 50% { rotate: 3deg; } 75% { rotate: -1.5deg; } }
+.room[data-plants=snake] .plant .leaf:nth-child(n+5) { display: none; }
+.room[data-plants=fern] .plant .leaf {
+  bottom: 30%; width: 20%; height: 58%;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0,0,0,.14) 3px 4px), linear-gradient(#64924a, #2f5228);
+  border-radius: 50% 50% 50% 50% / 85% 85% 15% 15%;
+}
+.room[data-plants=fern] .plant .leaf:nth-child(1) { transform: translateX(-50%) rotate(-62deg); height: 44%; }
+.room[data-plants=fern] .plant .leaf:nth-child(2) { transform: translateX(-50%) rotate(-36deg); height: 54%; }
+.room[data-plants=fern] .plant .leaf:nth-child(3) { transform: translateX(-50%) rotate(-12deg); height: 64%; }
+.room[data-plants=fern] .plant .leaf:nth-child(4) { transform: translateX(-50%) rotate(12deg); height: 62%; }
+.room[data-plants=fern] .plant .leaf:nth-child(5) { transform: translateX(-50%) rotate(36deg); height: 52%; }
+.room[data-plants=fern] .plant .leaf:nth-child(6) { transform: translateX(-50%) rotate(62deg); height: 42%; }
+.room[data-plants=cactus] .plant .leaf { background: repeating-linear-gradient(90deg, #55864a 0 3px, #3d6a36 3px 6px); transform: none; }
+.room[data-plants=cactus] .plant .leaf:nth-child(1) { left: 33%; width: 34%; height: 62%; bottom: 30%; border-radius: 45% 45% 12% 12% / 22% 22% 6% 6%; }
+.room[data-plants=cactus] .plant .leaf:nth-child(2) { left: 18%; width: 16%; height: 24%; bottom: 56%; border-radius: 45% 45% 30% 30% / 30% 30% 20% 20%; box-shadow: calc(var(--u)*.6) calc(var(--u)*1.6) 0 calc(var(--u)*-.1) #3d6a36; }
+.room[data-plants=cactus] .plant .leaf:nth-child(3) { left: 66%; width: 15%; height: 18%; bottom: 64%; border-radius: 45% 45% 30% 30% / 30% 30% 20% 20%; }
+.room[data-plants=cactus] .plant .leaf:nth-child(n+4) { display: none; }
+
+/* ---------- lamps ---------- */
+.floorlamp { position: absolute; bottom: 24%; width: calc(var(--u)*6); height: calc(var(--u)*32); z-index: 2;
+  background: radial-gradient(ellipse 50% 100% at 50% 100%, #5e4520 0 60%, transparent 62%) bottom / 100% calc(var(--u)*1.2) no-repeat; }
+.floorlamp.l { left: calc(50% - var(--u)*49); }
+.floorlamp.r { right: calc(50% - var(--u)*49); }
+.floorlamp::before { /* shade */
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: calc(var(--u)*5.5); z-index: 2;
+  background: linear-gradient(var(--paper), color-mix(in srgb, var(--accent2) 65%, var(--paper)));
+  clip-path: polygon(20% 0, 80% 0, 100% 100%, 0 100%);
+}
+.floorlamp::after { /* brass pole */
+  content: ''; position: absolute; left: calc(50% - var(--u)*.25); width: calc(var(--u)*.5); top: calc(var(--u)*5); bottom: calc(var(--u)*.6);
+  background: linear-gradient(90deg, #7d5f25, #d0ad62, #7d5f25);
+}
+.floorlamp .glow {
+  position: absolute; left: 50%; top: calc(var(--u)*3); width: calc(var(--u)*34); height: calc(var(--u)*34);
+  transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--glow) 55%, transparent) 0, transparent 60%);
+  mix-blend-mode: soft-light; animation: breathe 6s ease-in-out infinite;
+}
+
+/* ---------- fairy lights ---------- */
+.garland {
+  position: absolute; left: 0; right: 0; top: calc(var(--u)*3.2); height: calc(var(--u)*4.5); z-index: 2;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50' preserveAspectRatio='none'%3E%3Cpath d='M0 0 Q50 80 100 0' fill='none' stroke='%233a2a1c' stroke-width='1.2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") 0 0 / calc(100% / 6) 100% repeat-x;
+}
+.garland i {
+  position: absolute; width: calc(var(--u)*.8); height: calc(var(--u)*1.2); margin-left: calc(var(--u)*-.4);
+  border-radius: 50% 50% 45% 45%; background: #ffe0a0;
+  box-shadow: 0 0 calc(var(--u)*.7) calc(var(--u)*.15) rgba(255,210,130,.75), 0 0 calc(var(--u)*2.6) rgba(255,210,130,.45);
+  transition: background .4s, box-shadow .4s;
+}
+.garland i:nth-child(3n+1) { background: #ffd383; }
+.garland i::before { content: ''; position: absolute; left: 25%; right: 25%; top: -20%; height: 30%; background: #3a2a1c; border-radius: 1px; }
+.garland[data-mode=twinkle] i { animation: twinkle 1.8s ease-in-out infinite; }
+.garland[data-mode=off] i { background: #8a7c66; box-shadow: none; }
+@keyframes twinkle { 50% { opacity: .35; box-shadow: none; } }
+
+/* ---------- window ---------- */
+.window {
+  position: absolute; left: calc(50% - var(--u)*44); top: calc(var(--u)*9); width: calc(var(--u)*14); height: calc(var(--u)*17); z-index: 1;
+  border: calc(var(--u)*.9) solid color-mix(in srgb, var(--paper) 82%, var(--wood)); border-radius: calc(var(--u)*.4);
+  box-shadow: 0 calc(var(--u)*.6) calc(var(--u)*1.4) rgba(0,0,0,.35); overflow: hidden;
+}
+.window::after { /* glazing bars */
+  content: ''; position: absolute; inset: 0; z-index: 2;
+  background:
+    linear-gradient(90deg, transparent calc(50% - var(--u)*.3), color-mix(in srgb, var(--paper) 82%, var(--wood)) 0 calc(50% + var(--u)*.3), transparent 0),
+    linear-gradient(transparent calc(50% - var(--u)*.3), color-mix(in srgb, var(--paper) 82%, var(--wood)) 0 calc(50% + var(--u)*.3), transparent 0);
+}
+.window .sky {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(1.5px 1.5px at 18% 28%, #fff 50%, transparent), radial-gradient(1px 1px at 70% 14%, #fff 50%, transparent),
+    radial-gradient(1px 1px at 42% 62%, rgba(255,255,255,.8) 50%, transparent), radial-gradient(1px 1px at 84% 58%, rgba(255,255,255,.7) 50%, transparent),
+    radial-gradient(1px 1px at 30% 82%, rgba(255,255,255,.6) 50%, transparent),
+    linear-gradient(#0e1a31, #23375a 70%, #3a4962);
+}
+.window i { position: absolute; display: block; }
+.window .moon { top: 14%; right: 18%; width: calc(var(--u)*2.6); aspect-ratio: 1; border-radius: 50%; background: #f4ecd0;
+  box-shadow: 0 0 calc(var(--u)*1.6) rgba(244,236,208,.55), inset calc(var(--u)*-.7) calc(var(--u)*-.3) 0 rgba(0,0,0,.12); }
+.window .shooting { top: 10%; left: -30%; width: calc(var(--u)*5); height: 1.5px; background: linear-gradient(90deg, transparent, #fff); opacity: 0; transform: rotate(18deg); }
+.window.shoot .shooting { animation: shoot 1.1s ease-out; }
+@keyframes shoot { 15% { opacity: 1; } 100% { opacity: 0; translate: calc(var(--u)*17) calc(var(--u)*5.5); } }
+.window .curtain { top: 0; bottom: 0; width: 24%; z-index: 3;
+  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--paper) 70%, var(--accent2)) 0 calc(var(--u)*.8), color-mix(in srgb, var(--paper) 45%, var(--wood)) calc(var(--u)*.8) calc(var(--u)*1.2));
+  filter: drop-shadow(0 0 calc(var(--u)*.6) rgba(0,0,0,.3)); }
+.window .curtain.l { left: 0; clip-path: polygon(0 0, 100% 0, 55% 55%, 75% 100%, 0 100%); }
+.window .curtain.r { right: 0; clip-path: polygon(0 0, 100% 0, 100% 100%, 25% 100%, 45% 55%); }
+
+/* ---------- bookshelf ---------- */
+.shelf { position: absolute; right: calc(50% - var(--u)*44); top: calc(var(--u)*10); width: calc(var(--u)*15); z-index: 1; display: grid; gap: calc(var(--u)*3); }
+.shelf .row {
+  display: flex; align-items: flex-end; gap: 2px; height: calc(var(--u)*5.2); padding: 0 calc(var(--u)*.8);
+  border-bottom: calc(var(--u)*.8) solid var(--wood);
+  filter: drop-shadow(0 calc(var(--u)*.6) calc(var(--u)*.5) rgba(0,0,0,.35));
+}
+.shelf .book {
+  display: block; flex: none; width: calc(var(--u)*1.15); height: 82%; border-radius: 1px 1px 0 0;
+  background: var(--c, var(--rug2));
+  box-shadow: inset -2px 0 0 rgba(0,0,0,.2), inset 0 calc(var(--u)*.7) 0 rgba(255,255,255,.12), inset 0 calc(var(--u)*-.9) 0 rgba(0,0,0,.12);
+  transition: translate .3s var(--ease);
+}
+.shelf .book.out { translate: 0 calc(var(--u)*-1.3); }
+.shelf .book:nth-child(7n+1) { --c: color-mix(in srgb, var(--rug1) 70%, #5a5048); height: 88%; }
+.shelf .book:nth-child(7n+2) { --c: color-mix(in srgb, var(--rug2) 70%, #5a5048); height: 76%; width: calc(var(--u)*1.4); }
+.shelf .book:nth-child(7n+3) { --c: color-mix(in srgb, var(--accent2) 60%, #6a5e50); height: 92%; }
+.shelf .book:nth-child(7n+4) { --c: color-mix(in srgb, var(--paper) 80%, #8d7f69); height: 70%; width: calc(var(--u)*.9); }
+.shelf .book:nth-child(7n+5) { --c: color-mix(in srgb, var(--sofa) 80%, #5a5048); height: 84%; }
+.shelf .book:nth-child(7n+6) { --c: color-mix(in srgb, var(--wood2) 80%, #3a2a1c); height: 95%; width: calc(var(--u)*1.3); }
+.shelf .book:nth-child(7n+7) { --c: color-mix(in srgb, var(--accent) 55%, #6a5e50); height: 80%; rotate: 14deg; transform-origin: 0 100%; margin-left: calc(var(--u)*.4); }
+.shelf .vase { display: block; margin-left: auto; width: calc(var(--u)*2.2); height: 70%; border-radius: 40% 40% 45% 45% / 30% 30% 55% 55%;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--glow2) 50%, #7a8a8a), color-mix(in srgb, var(--glow2) 80%, white) 40%, color-mix(in srgb, var(--glow2) 50%, #5a6a6a)); }
+
+/* ---------- armchair ---------- */
+.chair { position: absolute; left: calc(50% - var(--u)*48); bottom: 12%; width: calc(var(--u)*13); height: calc(var(--u)*15); z-index: 3;
+  transform-origin: 50% 100%; --c: color-mix(in srgb, var(--accent2) 40%, var(--wood)); }
+.chair::after { content: ''; position: absolute; left: 0; right: 0; bottom: calc(var(--u)*-1); height: calc(var(--u)*2); background: radial-gradient(ellipse, rgba(0,0,0,.4), transparent 70%); z-index: -1; }
+.chair i { position: absolute; display: block; }
+.chair .cback { left: 12%; right: 12%; top: 0; height: 62%; border-radius: calc(var(--u)*4) calc(var(--u)*4) calc(var(--u)*1) calc(var(--u)*1);
+  background: linear-gradient(90deg, rgba(0,0,0,.2), transparent 30%, transparent 70%, rgba(0,0,0,.25)), linear-gradient(color-mix(in srgb, var(--c) 80%, white), var(--c) 30%, color-mix(in srgb, var(--c) 70%, black)); }
+.chair .cseat { left: 8%; right: 8%; top: 52%; height: 22%; border-radius: calc(var(--u)*1.4);
+  background: linear-gradient(color-mix(in srgb, var(--c) 90%, white), color-mix(in srgb, var(--c) 72%, black)); box-shadow: 0 calc(var(--u)*.5) calc(var(--u)*1) rgba(0,0,0,.3); }
+.chair .carm { top: 38%; width: 20%; height: 38%; border-radius: calc(var(--u)*2.4) calc(var(--u)*2.4) calc(var(--u)*.6) calc(var(--u)*.6);
+  background: linear-gradient(color-mix(in srgb, var(--c) 85%, white), color-mix(in srgb, var(--c) 62%, black)); }
+.chair .carm.l { left: 0; } .chair .carm.r { right: 0; }
+.chair .cleg { bottom: 0; width: 5%; height: 26%; background: var(--wood2); }
+.chair .cleg.l { left: 16%; rotate: 6deg; } .chair .cleg.r { right: 16%; rotate: -6deg; }
+.chair.rock { animation: rock 1.6s ease-in-out; }
+@keyframes rock { 20% { rotate: -4deg; } 45% { rotate: 3deg; } 70% { rotate: -1.5deg; } }
+
+/* ---------- record player ---------- */
+.record { position: absolute; right: calc(50% - var(--u)*48); bottom: 22%; width: calc(var(--u)*12); height: calc(var(--u)*11); z-index: 3; }
+.record i { position: absolute; display: block; }
+.record .cab { left: 0; right: 0; bottom: 0; height: 62%; border-radius: calc(var(--u)*.6);
+  background: linear-gradient(90deg, transparent calc(50% - 1px), rgba(0,0,0,.3) 50%, transparent calc(50% + 1px)),
+    linear-gradient(90deg, rgba(0,0,0,.2), transparent 20%, transparent 80%, rgba(0,0,0,.2)),
+    linear-gradient(color-mix(in srgb, var(--wood) 88%, white), var(--wood2));
+  box-shadow: 0 calc(var(--u)*.8) calc(var(--u)*1.2) rgba(0,0,0,.35); }
+.record .deck { left: 4%; right: 4%; bottom: 60%; height: 16%; border-radius: calc(var(--u)*.4); background: linear-gradient(#3a2d22, #22190f); }
+.record .disc { left: 12%; bottom: 62%; width: 50%; aspect-ratio: 1; border-radius: 50%; transform: scaleY(.3); transform-origin: 50% 100%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 80%, black) 0 15%, #121212 17% 100%); overflow: hidden; }
+.record .disc::before { content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 20%, rgba(255,255,255,.22) 25%, transparent 30% 70%, rgba(255,255,255,.15) 75%, transparent 80%); }
+.record.playing .disc::before { animation: spin 1.8s linear infinite; }
+.record .tonearm { right: 10%; bottom: 66%; width: 3%; height: 26%; background: linear-gradient(90deg, #a39c8a, #e0d9c6); border-radius: 2px; transform-origin: 50% 100%; rotate: -78deg; transition: rotate .6s var(--ease); }
+.record.playing .tonearm { rotate: -62deg; }
+.record .notes { position: absolute; left: 30%; bottom: 78%; pointer-events: none; }
+.record .notes b { position: absolute; opacity: 0; color: var(--paper); font-size: calc(var(--u)*1.8); text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.record.playing .notes b { animation: note 3s ease-out infinite; }
+.record.playing .notes b:nth-child(2) { animation-delay: 1s; left: calc(var(--u)*1.2); }
+.record.playing .notes b:nth-child(3) { animation-delay: 2s; left: calc(var(--u)*-1); }
+@keyframes spin { to { rotate: 360deg; } }
+@keyframes note { 0% { opacity: 0; translate: 0 0; rotate: -10deg; } 20% { opacity: .9; } 100% { opacity: 0; translate: calc(var(--u)*3) calc(var(--u)*-9); rotate: 12deg; } }
+
+/* ---------- on the sofa ---------- */
+.sofa .pillow.fluff { animation: fluff .6s var(--ease); }
+@keyframes fluff { 30% { scale: 1.12 .86; } 60% { scale: .95 1.07; } }
+.sofa .blanket { transform-origin: 50% 0; }
+.sofa .blanket.swish { animation: swish .9s ease-in-out; }
+@keyframes swish { 30% { rotate: 2.5deg; } 65% { rotate: -1.5deg; } }
+.popcorn { position: absolute; left: 58%; bottom: 66%; width: calc(var(--u)*8); height: calc(var(--u)*6); z-index: 2; }
+.popcorn i { position: absolute; display: block; }
+.popcorn .bowl { left: 0; right: 0; bottom: 0; height: 62%; border-radius: 4% 4% 50% 50% / 8% 8% 100% 100%;
+  background: repeating-linear-gradient(90deg, #b8392e 0 calc(var(--u)*.9), #f2e8d2 calc(var(--u)*.9) calc(var(--u)*1.8));
+  box-shadow: inset 0 calc(var(--u)*.5) 0 rgba(0,0,0,.15), 0 calc(var(--u)*.4) calc(var(--u)*.8) rgba(0,0,0,.3); }
+.popcorn .k { bottom: 50%; width: calc(var(--u)*1.7); height: calc(var(--u)*1.5); border-radius: 45% 55% 50% 50%;
+  background: radial-gradient(circle at 35% 35%, #fffaf0, #f3dfa8 70%, #d6b264); }
+.popcorn .k:nth-child(1) { left: 4%; --dx: calc(var(--u)*-1.5); }
+.popcorn .k:nth-child(2) { left: 20%; bottom: 56%; --dx: calc(var(--u)*-.6); }
+.popcorn .k:nth-child(3) { left: 38%; bottom: 58%; --dx: 0px; }
+.popcorn .k:nth-child(4) { left: 55%; bottom: 55%; --dx: calc(var(--u)*.8); }
+.popcorn .k:nth-child(5) { left: 72%; --dx: calc(var(--u)*1.6); }
+.popcorn .k:nth-child(6) { left: 30%; bottom: 66%; --dx: calc(var(--u)*.3); }
+.popcorn.pop .k { animation: popk .8s cubic-bezier(.2, .7, .4, 1); }
+.popcorn.pop .k:nth-child(2n) { animation-delay: .08s; }
+.popcorn.pop .k:nth-child(3n) { animation-delay: .16s; }
+@keyframes popk { 40% { translate: var(--dx) calc(var(--u)*-4.5); rotate: 90deg; } 100% { translate: 0 0; rotate: 0deg; } }
+
 .caption {
   position: absolute; left: 0; right: 0; bottom: max(12px, calc(var(--u)*1.6)); z-index: 7; text-align: center;
   color: var(--paper); font-size: max(11px, calc(var(--u)*1.2)); letter-spacing: .3em; font-weight: 500;
@@ -369,6 +628,11 @@ button { cursor: pointer; }
   .caption span { display: block; } .caption span + span::before { display: none; }
   .sofa { bottom: calc(var(--u)*-2); }
   .plaque { top: calc(var(--u)*8); white-space: normal; width: max-content; max-width: 86vw; }
+  .floorlamp, .chair, .record { display: none; }
+  .window { left: calc(50% - var(--u)*22); top: calc(var(--u)*17); width: calc(var(--u)*10); height: calc(var(--u)*11); }
+  .shelf { right: calc(50% - var(--u)*22); top: calc(var(--u)*17); width: calc(var(--u)*10); gap: calc(var(--u)*2); }
+  .shelf .row { height: calc(var(--u)*3.6); padding: 0 calc(var(--u)*.4); }
+  .shelf .book { width: calc(var(--u)*.85); }
 }
 
 /* ==========================================================
@@ -611,7 +875,14 @@ section.block { margin: 0 0 56px; }
 
 /* ---------- host ---------- */
 .hostgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
-@media (max-width: 760px) { .hostgrid { grid-template-columns: 1fr; } }
+.card.wide { grid-column: 1 / -1; }
+.room-editor { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.room-preview { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 6px; background: var(--wall); box-shadow: inset 0 0 0 1px rgba(0,0,0,.15), 0 6px 16px rgba(0,0,0,.2); }
+.room-preview iframe { position: absolute; top: 0; left: 0; width: 1280px; height: 800px; border: 0; transform-origin: 0 0; pointer-events: none; }
+.room-row { margin-bottom: 14px; }
+.room-row .k { display: block; font-size: 11px; letter-spacing: .3em; opacity: .6; margin-bottom: 6px; }
+.room-row .chip { font-size: 13px; }
+@media (max-width: 760px) { .hostgrid, .room-editor { grid-template-columns: 1fr; } }
 .card { background: var(--paper); border-radius: 6px; padding: 22px 24px; box-shadow: 0 12px 24px rgba(0,0,0,.25); }
 .card h3 { margin: 0 0 14px; font-size: 20px; letter-spacing: .04em; }
 .themes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
