@@ -21,7 +21,7 @@
   --wall: #5b6a3c; --wall2: #526034; --wood: #8b5a2b; --wood2: #6e4521;
   --accent: #d4848c; --accent2: #e8c07a; --paper: #f4ead5; --paper2: #eadcbf;
   --ink: #2b2620; --floor: #7a4e2a; --rug1: #8f2f2a; --rug2: #1f3a5a; --rug3: #e3c58a;
-  --glow: #fff1c9; --glow2: #cfe9ec;
+  --glow: #fff1c9; --glow2: #cfe9ec; --sofa: #33474a;
   --u: min(1vw, 1.55vh);
   --sans: 'Jost', Futura, 'Century Gothic', 'Avenir Next', system-ui, sans-serif;
   --mono: 'Courier Prime', 'Courier New', ui-monospace, monospace;
@@ -90,37 +90,41 @@ button { cursor: pointer; }
 .floor {
   position: absolute; left: 0; right: 0; top: 66%; bottom: 0;
   background:
-    repeating-linear-gradient(90deg, rgba(0,0,0,.18) 0 2px, transparent 2px calc(var(--u)*7)),
-    linear-gradient(color-mix(in srgb, var(--floor) 70%, black), var(--floor));
+    radial-gradient(ellipse 38% 30% at 50% 0, color-mix(in srgb, var(--glow) 22%, transparent), transparent 70%),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.22) 0 1px, transparent 1px calc(var(--u)*7)),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px calc(var(--u)*.9), rgba(0,0,0,.03) calc(var(--u)*.9) calc(var(--u)*1.1), transparent calc(var(--u)*1.1) calc(var(--u)*2.3)),
+    linear-gradient(color-mix(in srgb, var(--floor) 62%, black), var(--floor) 70%, color-mix(in srgb, var(--floor) 88%, black));
 }
 .rug {
-  position: absolute; left: 50%; top: 4%; width: calc(var(--u)*70); height: calc(var(--u)*34);
+  position: absolute; left: 50%; top: 5%; width: calc(var(--u)*64); height: calc(var(--u)*31);
   transform: translateX(-50%) perspective(calc(var(--u)*40)) rotateX(56deg);
   transform-origin: 50% 0;
-  border-radius: calc(var(--u)*.6);
+  border-radius: calc(var(--u)*.4);
+  /* faded wool tones: theme colours softened toward a warm grey */
+  --r1: color-mix(in srgb, var(--rug1) 62%, #6f6252);
+  --r2: color-mix(in srgb, var(--rug2) 60%, #4b443b);
+  --r3: color-mix(in srgb, var(--rug3) 70%, #8d7f69);
   background:
-    radial-gradient(ellipse 20% 26% at 50% 50%, var(--rug3) 0 22%, var(--rug1) 24% 40%, var(--rug2) 42% 76%, var(--rug3) 78% 84%, transparent 86%),
-    radial-gradient(circle at 0 0, var(--rug2) 0 13%, var(--rug3) 13.5% 14.5%, transparent 15%),
-    radial-gradient(circle at 100% 0, var(--rug2) 0 13%, var(--rug3) 13.5% 14.5%, transparent 15%),
-    radial-gradient(circle at 0 100%, var(--rug2) 0 13%, var(--rug3) 13.5% 14.5%, transparent 15%),
-    radial-gradient(circle at 100% 100%, var(--rug2) 0 13%, var(--rug3) 13.5% 14.5%, transparent 15%),
-    radial-gradient(circle, color-mix(in srgb, var(--rug3) 70%, transparent) 0 18%, transparent 22%) 0 0 / calc(var(--u)*2.6) calc(var(--u)*2.6),
-    repeating-linear-gradient(45deg, transparent 0 calc(var(--u)*1.6), color-mix(in srgb, var(--rug3) 28%, transparent) calc(var(--u)*1.6) calc(var(--u)*1.84)),
-    repeating-linear-gradient(-45deg, transparent 0 calc(var(--u)*1.6), color-mix(in srgb, var(--rug3) 28%, transparent) calc(var(--u)*1.6) calc(var(--u)*1.84)),
-    var(--rug1);
+    radial-gradient(ellipse 55% 50% at 50% 48%, rgba(255,244,220,.13), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.06) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 4px),
+    radial-gradient(circle, color-mix(in srgb, var(--r3) 30%, transparent) 0 12%, transparent 16%) 0 0 / calc(var(--u)*3.6) calc(var(--u)*3.6),
+    var(--r1);
   box-shadow:
-    inset 0 0 0 calc(var(--u)*1) var(--rug2),
-    inset 0 0 0 calc(var(--u)*1.4) var(--rug3),
-    inset 0 0 0 calc(var(--u)*3.2) var(--rug2),
-    inset 0 0 0 calc(var(--u)*3.6) var(--rug3),
-    0 calc(var(--u)*1) calc(var(--u)*2) rgba(0,0,0,.35);
+    inset 0 0 0 calc(var(--u)*.7) var(--r2),
+    inset 0 0 0 calc(var(--u)*.95) var(--r3),
+    inset 0 0 0 calc(var(--u)*2.8) var(--r2),
+    inset 0 0 0 calc(var(--u)*3.05) color-mix(in srgb, var(--r3) 70%, transparent),
+    inset 0 0 calc(var(--u)*7) rgba(0,0,0,.28),
+    0 calc(var(--u)*.6) calc(var(--u)*1.4) rgba(0,0,0,.4);
 }
 .rug::before, .rug::after { /* fringe */
-  content: ''; position: absolute; top: 0; bottom: 0; width: calc(var(--u)*1.2);
-  background: repeating-linear-gradient(var(--paper) 0 2px, transparent 2px 5px);
+  content: ''; position: absolute; top: 2%; bottom: 2%; width: calc(var(--u)*.9);
+  background: repeating-linear-gradient(color-mix(in srgb, var(--paper) 70%, #8d7f69) 0 1px, transparent 1px 4px);
+  opacity: .8;
 }
-.rug::before { left: calc(var(--u)*-1.2); }
-.rug::after { right: calc(var(--u)*-1.2); }
+.rug::before { left: calc(var(--u)*-.9); }
+.rug::after { right: calc(var(--u)*-.9); }
 
 /* wall details */
 .plaque {
@@ -132,20 +136,6 @@ button { cursor: pointer; }
   text-align: center;
 }
 .plaque small { display: block; font-weight: 500; letter-spacing: .35em; font-size: .7em; opacity: .75; margin-top: .3em; }
-
-.frame {
-  position: absolute; top: calc(var(--u)*13); width: calc(var(--u)*11); height: calc(var(--u)*14);
-  background: var(--paper); border: calc(var(--u)*1) solid var(--wood2);
-  box-shadow: inset 0 0 0 calc(var(--u)*.8) var(--paper), inset 0 0 0 calc(var(--u)*.9) rgba(0,0,0,.2), 0 calc(var(--u)*.8) calc(var(--u)*1.5) rgba(0,0,0,.35);
-  overflow: hidden;
-}
-.frame.l { left: calc(50% - var(--u)*35); }
-.frame.r { right: calc(50% - var(--u)*35); }
-.frame i { position: absolute; display: block; }
-.frame.l i:nth-child(1) { left: 18%; right: 18%; bottom: 18%; height: 34%; background: var(--accent); clip-path: polygon(0 100%, 35% 20%, 55% 60%, 75% 0, 100% 100%); }
-.frame.l i:nth-child(2) { width: 26%; aspect-ratio: 1; border-radius: 50%; background: var(--accent2); top: 20%; left: 37%; }
-.frame.r i:nth-child(1) { inset: 20% 22% 18%; background: repeating-linear-gradient(var(--accent) 0 12%, var(--paper) 12% 18%); border-radius: 40% 40% 0 0; }
-.frame.r i:nth-child(2) { left: 42%; width: 16%; bottom: 18%; height: 22%; background: var(--wood2); border-radius: 30% 30% 0 0; }
 
 .sconce { position: absolute; top: calc(var(--u)*15); width: calc(var(--u)*5); height: calc(var(--u)*10); }
 .sconce.l { left: calc(50% - var(--u)*51); }
@@ -172,7 +162,7 @@ button { cursor: pointer; }
 .plant.r { right: calc(50% - var(--u)*34); transform: scaleX(-1); }
 .plant .pot {
   position: absolute; bottom: 0; left: 10%; right: 10%; height: 34%;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 75%, black), var(--accent) 40%, color-mix(in srgb, var(--accent) 85%, white));
+  background: linear-gradient(90deg, #7a4128, #a8623f 40%, #bf7a55 60%, #8c4b2e);
   clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%); border-radius: 2px;
 }
 .plant .leaf {
@@ -296,32 +286,53 @@ button { cursor: pointer; }
 .sofa {
   position: absolute; left: 50%; bottom: calc(var(--u)*-6); transform: translateX(-50%);
   width: calc(var(--u)*96); height: calc(var(--u)*17); z-index: 6;
+  --fabric: var(--sofa);
+}
+.sofa::before { /* shadow it throws forward onto the floor */
+  content: ''; position: absolute; left: 4%; right: 4%; top: calc(var(--u)*-2.4); height: calc(var(--u)*4);
+  background: radial-gradient(ellipse at 50% 100%, rgba(0,0,0,.35), transparent 70%); z-index: -1;
 }
 .sofa .back {
   position: absolute; inset: 0 calc(var(--u)*6) 0;
   background:
-    repeating-linear-gradient(90deg, transparent 0 calc(var(--u)*20.5), rgba(0,0,0,.14) calc(var(--u)*20.5) calc(var(--u)*21)),
-    linear-gradient(color-mix(in srgb, var(--accent) 90%, white) 0, var(--accent) 22%, color-mix(in srgb, var(--accent) 70%, black));
-  border-radius: calc(var(--u)*5) calc(var(--u)*5) 0 0;
-  box-shadow: inset 0 calc(var(--u)*.6) calc(var(--u)*.6) rgba(255,255,255,.25), 0 calc(var(--u)*-1) calc(var(--u)*3) rgba(0,0,0,.25);
+    radial-gradient(ellipse 70% 45% at 50% 0, color-mix(in srgb, var(--glow) 22%, transparent), transparent 70%),
+    linear-gradient(90deg, transparent calc(33.3% - 1px), rgba(0,0,0,.2) 33.3%, transparent calc(33.3% + 3px), transparent calc(66.6% - 1px), rgba(0,0,0,.2) 66.6%, transparent calc(66.6% + 3px)),
+    linear-gradient(90deg, rgba(0,0,0,.28), transparent 14%, transparent 86%, rgba(0,0,0,.28)),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 3px),
+    linear-gradient(color-mix(in srgb, var(--fabric) 78%, white) 0, var(--fabric) 16%, color-mix(in srgb, var(--fabric) 62%, black));
+  border-radius: calc(var(--u)*4) calc(var(--u)*4) calc(var(--u)*.6) calc(var(--u)*.6);
+  box-shadow: inset 0 calc(var(--u)*.5) calc(var(--u)*.8) rgba(255,255,255,.12), 0 calc(var(--u)*-1) calc(var(--u)*3) rgba(0,0,0,.3);
 }
 .sofa .arm {
-  position: absolute; bottom: 0; width: calc(var(--u)*11); height: 82%;
-  background: linear-gradient(color-mix(in srgb, var(--accent) 85%, white), color-mix(in srgb, var(--accent) 65%, black));
-  border-radius: calc(var(--u)*5.5) calc(var(--u)*5.5) 0 0;
+  position: absolute; bottom: 0; width: calc(var(--u)*11); height: 80%;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.25), transparent 35%, transparent 70%, rgba(0,0,0,.3)),
+    linear-gradient(color-mix(in srgb, var(--fabric) 82%, white), var(--fabric) 22%, color-mix(in srgb, var(--fabric) 58%, black));
+  border-radius: calc(var(--u)*5.5) calc(var(--u)*5.5) calc(var(--u)*.6) calc(var(--u)*.6);
+  box-shadow: 0 calc(var(--u)*-.6) calc(var(--u)*1.6) rgba(0,0,0,.25);
 }
 .sofa .arm.l { left: 0; } .sofa .arm.r { right: 0; }
 .sofa .pillow {
-  position: absolute; bottom: 68%; width: calc(var(--u)*9); height: calc(var(--u)*7); border-radius: calc(var(--u)*1.6);
-  background: repeating-linear-gradient(45deg, var(--accent2) 0 calc(var(--u)*.9), var(--paper) calc(var(--u)*.9) calc(var(--u)*1.8));
-  box-shadow: 0 calc(var(--u)*.5) calc(var(--u)*1) rgba(0,0,0,.25);
+  position: absolute; bottom: 70%; width: calc(var(--u)*9); height: calc(var(--u)*6.6); border-radius: calc(var(--u)*1.8);
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.04) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 40% 30%, rgba(255,255,255,.18), transparent 60%),
+    color-mix(in srgb, var(--accent2) 45%, var(--paper));
+  box-shadow: inset 0 calc(var(--u)*-.6) calc(var(--u)*1) rgba(0,0,0,.18), 0 calc(var(--u)*.5) calc(var(--u)*1) rgba(0,0,0,.25);
 }
-.sofa .pillow.l { left: calc(var(--u)*13); transform: rotate(-10deg); }
-.sofa .pillow.r { right: calc(var(--u)*13); transform: rotate(8deg); background: var(--paper); }
-.sofa .blanket {
-  position: absolute; bottom: 0; left: 15%; width: calc(var(--u)*13); height: 70%;
-  background: repeating-linear-gradient(90deg, var(--rug2) 0 calc(var(--u)*1.2), var(--paper) calc(var(--u)*1.2) calc(var(--u)*1.5), var(--rug2) calc(var(--u)*1.5) calc(var(--u)*3));
-  clip-path: polygon(8% 0, 92% 4%, 100% 100%, 0 100%); opacity: .95;
+.sofa .pillow.l { left: calc(var(--u)*13); transform: rotate(-9deg); }
+.sofa .pillow.r { right: calc(var(--u)*13); transform: rotate(7deg); background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.04) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 40% 30%, rgba(255,255,255,.18), transparent 60%),
+    color-mix(in srgb, var(--paper) 80%, var(--wood)); }
+.sofa .blanket { /* a knitted throw over the back */
+  position: absolute; bottom: 0; left: 15%; width: calc(var(--u)*13); height: 74%;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.18), transparent 25%, transparent 75%, rgba(0,0,0,.2)),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.09) 0 calc(var(--u)*.35), transparent calc(var(--u)*.35) calc(var(--u)*1)),
+    linear-gradient(color-mix(in srgb, var(--rug3) 55%, var(--paper)), color-mix(in srgb, var(--rug3) 45%, #6f6252));
+  clip-path: polygon(6% 0, 94% 3%, 100% 100%, 0 100%);
+  border-radius: calc(var(--u)*1) calc(var(--u)*1) 0 0;
 }
 
 .caption {

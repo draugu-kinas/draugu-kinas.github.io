@@ -124,8 +124,6 @@ function renderRoom() {
     h('div', { class: 'wall' }),
     h('div', { class: 'molding' }),
     h('div', { class: 'plaque' }, cfg.CLUB_NAME || 'the picture club', h('small', null, ev ? 'night no. ' + ev.number : 'est. 2026')),
-    h('div', { class: 'frame l', 'aria-hidden': 'true' }, h('i'), h('i')),
-    h('div', { class: 'frame r', 'aria-hidden': 'true' }, h('i'), h('i')),
     h('div', { class: 'sconce l', 'aria-hidden': 'true' }, h('i', { class: 'glow' })),
     h('div', { class: 'sconce r', 'aria-hidden': 'true' }, h('i', { class: 'glow' })),
     h('div', { class: 'wainscot' }),

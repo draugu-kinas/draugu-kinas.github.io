@@ -152,7 +152,7 @@ language sql immutable set search_path = public as $$
   select case when jsonb_typeof(p) = 'object' then (
     select nullif(coalesce(jsonb_object_agg(key, value), '{}'::jsonb), '{}'::jsonb)
       from jsonb_each(p)
-     where key in ('wall','wood','floor','accent','accent2','paper','ink','rug1','rug2','rug3','glow')
+     where key in ('wall','wood','floor','accent','accent2','sofa','paper','ink','rug1','rug2','rug3','glow')
        and jsonb_typeof(value) = 'string' and (value #>> '{}') ~ '^#[0-9a-fA-F]{6}$'
   ) end
 $$;
