@@ -245,9 +245,8 @@ button { cursor: pointer; }
   font-weight: 600; font-size: 5.2cqi; letter-spacing: .12em; padding: 1.6cqi 5cqi; border-radius: 99px;
   transition: background .2s, color .2s, transform .2s;
 }
+/* both answers look the same; only the one under the pointer fills in */
 .screen-buttons button:hover, .screen-buttons button:focus-visible { background: var(--ink); color: var(--glow); transform: scale(1.05); }
-.screen-buttons button.primary { background: var(--ink); color: var(--glow); }
-.screen-buttons button.primary:hover { background: var(--accent); color: var(--ink); border-color: var(--ink); }
 .screen-sub { font-family: var(--mono); font-size: 3.6cqi; margin-top: 4cqi; opacity: 0; transition: opacity 1s .4s; letter-spacing: .04em; }
 .screen-buttons.on + .screen-sub { opacity: .75; }
 
@@ -881,6 +880,10 @@ section.block { margin: 0 0 56px; }
 .room-preview { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 6px; background: var(--wall); box-shadow: inset 0 0 0 1px rgba(0,0,0,.15), 0 6px 16px rgba(0,0,0,.2); }
 .room-preview iframe { position: absolute; top: 0; left: 0; width: 1280px; height: 800px; border: 0; transform-origin: 0 0; pointer-events: none; }
 .room-row { margin-bottom: 14px; }
+.hide-line { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; opacity: .75; cursor: pointer; text-transform: lowercase; }
+.field input:disabled { opacity: .45; }
+.field .hide-line input[type=checkbox] { flex: none; width: 16px; height: 16px; padding: 0; margin: 0; border: 0; box-shadow: none; accent-color: var(--ink); }
+.field .hide-line { width: max-content; letter-spacing: normal; }
 .room-row .k { display: block; font-size: 11px; letter-spacing: .3em; opacity: .6; margin-bottom: 6px; }
 .room-row .chip { font-size: 13px; }
 @media (max-width: 760px) { .hostgrid, .room-editor { grid-template-columns: 1fr; } }

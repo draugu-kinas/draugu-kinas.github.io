@@ -14,6 +14,7 @@ create table if not exists events (
   theme            text not null default 'moss',
   colors           jsonb,           -- host's fine-tuned colours on top of the theme
   room             jsonb,           -- which furniture is in the room and in what style
+  texts            jsonb,           -- host's own wording: missing = default, '' = hidden
   location         text,
   bring            text,
   final_date       date,
@@ -177,7 +178,18 @@ language sql immutable set search_path = public as $$
   ) end
 $$;
 
+-- keeps only known text slots, as strings of at most 80 characters ('' means hide it)
+create or replace function _clean_texts(p jsonb) returns jsonb
+language sql immutable set search_path = public as $$
+  select case when jsonb_typeof(p) = 'object' then (
+    select nullif(coalesce(jsonb_object_agg(key, to_jsonb(left(btrim(value #>> '{}'), 80))), '{}'::jsonb), '{}'::jsonb)
+      from jsonb_each(p)
+     where key in ('kicker','plaque','plaque_sub') and jsonb_typeof(value) = 'string'
+  ) end
+$$;
+
 revoke execute on function _clean_colors(jsonb)     from public, anon, authenticated;
+revoke execute on function _clean_texts(jsonb)      from public, anon, authenticated;
 revoke execute on function _clean_room(jsonb)       from public, anon, authenticated;
 revoke execute on function _me(uuid, text)          from public, anon, authenticated;
 revoke execute on function _require_open(uuid)      from public, anon, authenticated;
@@ -337,6 +349,7 @@ begin
     theme           = coalesce(p_patch->>'theme', theme),
     colors          = case when p_patch ? 'colors'     then _clean_colors(p_patch->'colors') else colors end,
     room            = case when p_patch ? 'room'       then _clean_room(p_patch->'room')     else room end,
+    texts           = case when p_patch ? 'texts'      then _clean_texts(p_patch->'texts')   else texts end,
     location        = case when p_patch ? 'location'   then nullif(p_patch->>'location','')   else location end,
     bring           = case when p_patch ? 'bring'      then nullif(p_patch->>'bring','')      else bring end,
     final_date      = case when p_patch ? 'final_date' then nullif(p_patch->>'final_date','')::date else final_date end,
@@ -370,8 +383,8 @@ begin
   update events set status = 'archived', archived_at = now(),
          winner_movie_id = coalesce(winner_movie_id, top)
    where id = p_event;
-  insert into events(number, title, theme, colors, room, location, bring)
-    values (e.number + 1, 'movie night no. ' || (e.number + 1), e.theme, e.colors, e.room, e.location, e.bring)
+  insert into events(number, title, theme, colors, room, texts, location, bring)
+    values (e.number + 1, 'movie night no. ' || (e.number + 1), e.theme, e.colors, e.room, e.texts, e.location, e.bring)
     returning id into new_id;
   return new_id;
 end $$;

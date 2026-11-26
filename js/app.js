@@ -33,6 +33,13 @@ function toast(msg) {
 /* ---------------- formatting ---------------- */
 const fmtDay = (iso, opts = { weekday: 'short', day: 'numeric', month: 'long' }) =>
   new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', opts).toLowerCase();
+// host-editable wording: missing = the default, '' = hidden
+const TEXT_DEFAULTS = {
+  kicker: ev => 'night no. ' + ev.number,
+  plaque: () => cfg.CLUB_NAME || 'the picture club',
+  plaque_sub: ev => 'night no. ' + ev.number,
+};
+const textOf = (ev, k) => { const v = ev?.texts?.[k]; return typeof v === 'string' ? v : (ev ? TEXT_DEFAULTS[k](ev) : ''); };
 const localToday = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
 const hash = s =>[...(s || '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7);
 const posterColors = ['var(--accent)', 'var(--rug2)', 'var(--rug1)', 'var(--wood2)', 'var(--wall2)'];
@@ -157,7 +164,11 @@ function renderRoom() {
     h('div', { class: 'wall' }),
     h('div', { class: 'molding' }),
     garland,
-    h('div', { class: 'plaque' }, cfg.CLUB_NAME || 'the picture club', h('small', null, ev ? 'night no. ' + ev.number : 'est. 2026')),
+    (() => {
+      const name = ev ? textOf(ev, 'plaque') : (cfg.CLUB_NAME || 'the picture club');
+      const sub = ev ? textOf(ev, 'plaque_sub') : 'est. 2026';
+      return name || sub ? h('div', { class: 'plaque' }, name, sub ? h('small', null, sub) : null) : null;
+    })(),
     pokeable('window', 'shoot', h('div', { class: 'sky' }, h('i', { class: 'moon' }), h('i', { class: 'shooting' })), h('i', { class: 'curtain l' }), h('i', { class: 'curtain r' })),
     h('div', { class: 'shelf', 'aria-hidden': 'true' }, h('div', { class: 'row' }, books(7)), h('div', { class: 'row' }, books(4), h('i', { class: 'vase' }))),
     lamp('sconce', 'l'), lamp('sconce', 'r'),
@@ -281,7 +292,7 @@ function renderBoard(quiet = false) {
     h('div', { class: 'wrap' },
       topnav(),
       h('header', { class: 'titlecard' },
-        h('div', { class: 'kicker' }, 'night no. ' + ev.number + ' · ' + (THEMES[ev.theme]?.name || '')),
+        textOf(ev, 'kicker') ? h('div', { class: 'kicker' }, textOf(ev, 'kicker')) : null,
         h('h1', null, ev.title),
         ev.tagline ? h('p', { class: 'tagline' }, ev.tagline) : null,
         h('div', { class: 'rule' })),
@@ -576,7 +587,7 @@ async function renderArchive() {
       return h('article', { class: 'reel', style: `--swatch:${t.wall}` },
         w ? poster(w) : h('div', { class: 'poster type', style: `background:${t.wall}` }, h('b', null, '—'), h('span')),
         h('div', null,
-          h('div', { class: 'kicker' }, ['night no. ' + n.number, day, t.name].filter(Boolean).join(' · ')),
+          h('div', { class: 'kicker' }, ['night no. ' + n.number, day].filter(Boolean).join(' · ')),
           h('h3', null, n.title),
           w ? h('div', { class: 'feature' }, 'the feature: ', h('b', null, w.title), w.year ? ' (' + w.year + ')' : '',
             w.tickets ? ' — ' + w.tickets + (w.tickets === 1 ? ' ticket' : ' tickets') : '',
@@ -615,6 +626,24 @@ async function renderHost(quiet = false) {
     location: h('input', { value: ev.location || '' }),
     bring: h('input', { value: ev.bring || '' }),
   };
+  // wording slots: empty input = default text, "hide" = no text at all
+  const textField = (k, label, max = 80) => {
+    const saved = ev.texts?.[k];
+    const input = h('input', { maxlength: max, value: typeof saved === 'string' ? saved : '', placeholder: TEXT_DEFAULTS[k](ev) });
+    const hide = h('input', { type: 'checkbox', checked: saved === '' });
+    const sync = () => { input.disabled = hide.checked; };
+    hide.addEventListener('change', sync); sync();
+    return {
+      el: h('div', { class: 'field' }, h('span', null, label), input,
+        h('label', { class: 'hide-line' }, hide, ' hide this line')),
+      value: () => hide.checked ? '' : (input.value.trim() || null),
+    };
+  };
+  const t = {
+    kicker: textField('kicker', 'small line above the title'),
+    plaque: textField('plaque', 'plaque on the wall'),
+    plaque_sub: textField('plaque_sub', 'plaque, small line'),
+  };
   const dateIn = h('input', { type: 'date', value: ev.final_date || localToday() });
   const timeIn = h('input', { type: 'time', value: ev.final_time || '' });
   const dv = data.dateVotes || [];
@@ -628,12 +657,19 @@ async function renderHost(quiet = false) {
       h('p', { class: 'tagline' }, 'set the scene, pick the date, close the vote, roll the film.'),
       h('div', { class: 'rule' })),
     h('div', { class: 'hostgrid' },
-      h('form', { class: 'card', onsubmit: e => { e.preventDefault(); save({ title: f.title.value.trim() || ev.title, tagline: f.tagline.value.trim(), location: f.location.value.trim(), bring: f.bring.value.trim() }); } },
+      h('form', { class: 'card', onsubmit: e => {
+        e.preventDefault();
+        const texts = Object.fromEntries(Object.entries(t).map(([k, x]) => [k, x.value()]).filter(([, v]) => v !== null));
+        save({ title: f.title.value.trim() || ev.title, tagline: f.tagline.value.trim(), location: f.location.value.trim(), bring: f.bring.value.trim(), texts });
+      } },
         h('h3', null, 'the night'),
         h('label', { class: 'field' }, h('span', null, 'title'), f.title),
         h('label', { class: 'field' }, h('span', null, 'tagline'), f.tagline),
         h('label', { class: 'field' }, h('span', null, 'where'), f.location),
         h('label', { class: 'field' }, h('span', null, 'bring'), f.bring),
+        h('h3', { style: 'margin-top:24px' }, 'the wording'),
+        h('p', { class: 'note-small', style: 'margin:0 0 10px' }, 'leave a box empty for the default (shown in grey), or tick “hide” to remove the line.'),
+        t.kicker.el, t.plaque.el, t.plaque_sub.el,
         h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'save'))),
 
       h('div', { class: 'card' },
