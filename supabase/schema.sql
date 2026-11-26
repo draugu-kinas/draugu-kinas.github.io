@@ -226,6 +226,19 @@ begin
   return pid;
 end $$;
 
+create or replace function leave_event(p_event uuid, p_token text)
+returns void language plpgsql security definer set search_path = public as $$
+declare pid uuid;
+begin
+  if not exists (select 1 from events where id = p_event and status <> 'archived') then
+    raise exception 'not_open';
+  end if;
+  pid := _me(p_event, p_token);
+  -- your name leaves the guestbook together with your films and tickets
+  delete from movies where event_id = p_event and participant_id = pid;
+  delete from participants where id = pid;
+end $$;
+
 create or replace function add_movie(p_event uuid, p_token text, p_title text, p_year int,
                                      p_poster text default null, p_ext_id text default null,
                                      p_note text default null)
@@ -367,6 +380,15 @@ begin
   delete from movies where id = p_movie;
 end $$;
 
+create or replace function host_remove_participant(p_key text, p_participant uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  perform _require_host(p_key);
+  delete from movies where participant_id = p_participant
+     and event_id in (select event_id from participants where id = p_participant);
+  delete from participants where id = p_participant;
+end $$;
+
 -- closes the current night (winner = most tickets unless picked) and opens the next one
 create or replace function host_archive_and_new(p_key text, p_event uuid)
 returns uuid language plpgsql security definer set search_path = public as $$
@@ -392,6 +414,7 @@ end $$;
 grant execute on function join_event(uuid, text, text, text)                  to anon, authenticated;
 grant execute on function add_movie(uuid, text, text, int, text, text, text)  to anon, authenticated;
 grant execute on function remove_movie(text, uuid)                            to anon, authenticated;
+grant execute on function leave_event(uuid, text)                             to anon, authenticated;
 grant execute on function toggle_vote(text, uuid)                             to anon, authenticated;
 grant execute on function propose_date(uuid, text, date)                      to anon, authenticated;
 grant execute on function toggle_date(text, uuid)                             to anon, authenticated;
@@ -399,6 +422,7 @@ grant execute on function host_claim(text)                                    to
 grant execute on function host_has_key()                                      to anon, authenticated;
 grant execute on function host_update_event(text, uuid, jsonb)                to anon, authenticated;
 grant execute on function host_remove_movie(text, uuid)                       to anon, authenticated;
+grant execute on function host_remove_participant(text, uuid)                 to anon, authenticated;
 grant execute on function host_archive_and_new(text, uuid)                    to anon, authenticated;
 
 -- ---------- live updates ----------
