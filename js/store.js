@@ -120,6 +120,7 @@ export class SupabaseStore {
       p_poster: m.poster || null, p_ext_id: m.ext_id || null, p_note: m.note || null });
   }
   removeMovie(movieId) { return this.rpc('remove_movie', { p_token: deviceToken(), p_movie: movieId }); }
+  async leave(eventId) { await this.rpc('leave_event', { p_event: eventId, p_token: deviceToken() }); LS.del('mn.me.' + eventId); }
   toggleVote(movieId) { return this.rpc('toggle_vote', { p_token: deviceToken(), p_movie: movieId }); }
   proposeDate(eventId, day) { return this.rpc('propose_date', { p_event: eventId, p_token: deviceToken(), p_day: day }); }
   toggleDate(optionId) { return this.rpc('toggle_date', { p_token: deviceToken(), p_option: optionId }); }
@@ -128,6 +129,7 @@ export class SupabaseStore {
   hostClaim(key) { return this.rpc('host_claim', { p_key: key }); }
   hostUpdate(key, eventId, patch) { return this.rpc('host_update_event', { p_key: key, p_event: eventId, p_patch: patch }); }
   hostRemoveMovie(key, movieId) { return this.rpc('host_remove_movie', { p_key: key, p_movie: movieId }); }
+  hostRemoveParticipant(key, pid) { return this.rpc('host_remove_participant', { p_key: key, p_participant: pid }); }
   hostArchiveAndNew(key, eventId) { return this.rpc('host_archive_and_new', { p_key: key, p_event: eventId }); }
 
   subscribe(cb) {
@@ -250,6 +252,16 @@ export class DemoStore {
       poster: m.poster || null, ext_id: m.ext_id || null, note: m.note || null, created_at: new Date().toISOString() });
     this.save(db); return id;
   }
+  dropParticipant(db, pid) {
+    const gone = new Set(db.movies.filter(m => m.participant_id === pid).map(m => m.id));
+    db.movies = db.movies.filter(m => !gone.has(m.id));
+    db.votes = db.votes.filter(v => !gone.has(v.movie_id) && v.participant_id !== pid);
+    db.dateVotes = (db.dateVotes || []).filter(v => v.participant_id !== pid);
+    db.participants = db.participants.filter(p => p.id !== pid);
+    for (const [k, v] of Object.entries(db.secrets)) if (v === pid) delete db.secrets[k];
+  }
+  async leave(eventId) { const db = this.db; this.dropParticipant(db, this.me(db, eventId)); this.save(db); }
+  async hostRemoveParticipant(key, pid) { const db = this.db; this.host(db, key); this.dropParticipant(db, pid); this.save(db); }
   async removeMovie(movieId) {
     const db = this.db; const m = db.movies.find(x => x.id === movieId); if (!m) return;
     this.open(db, m.event_id);

@@ -57,7 +57,7 @@ button { cursor: pointer; }
 .room.zooming { will-change: transform; }
 .room.zooming *, .room.zooming *::before, .room.zooming *::after { animation-play-state: paused !important; }
 .room.zooming .spill, .room.zooming .sconce .glow { opacity: 0; transition: opacity .25s; }
-.room.entering { transform: scale(4.2); }
+.room.entering { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(var(--zs, 4.2)); }
 .room.entering .flash { opacity: 1; transition-delay: .55s; }
 .flash {
   position: absolute; inset: 0; z-index: 50; pointer-events: none; opacity: 0;
@@ -849,7 +849,21 @@ section.block { margin: 0 0 56px; }
 .guestbook { background: var(--paper); border-radius: 6px; padding: 22px 26px; box-shadow: 0 10px 22px rgba(0,0,0,.25); columns: 2 240px; column-gap: 32px; }
 .guestbook div { break-inside: avoid; padding: 7px 0; border-bottom: 1px solid color-mix(in srgb, var(--ink) 14%, transparent); display: flex; justify-content: space-between; gap: 1rem; }
 .guestbook b { font-weight: 600; }
-.guestbook span { font-family: var(--mono); font-size: 13px; opacity: .75; text-transform: none; text-align: right; }
+.guestbook span { font-family: var(--mono); font-size: 13px; opacity: .75; text-transform: none; text-align: right; margin-left: auto; }
+.guestbook div { align-items: baseline; }
+.gb-x { flex: none; background: none; border: 0; padding: 2px 0 2px 6px; font-size: 11px; letter-spacing: .12em; color: var(--ink); opacity: .45; }
+.gb-x:hover, .gb-x:focus-visible { opacity: 1; text-decoration: underline; }
+.gb-x.armed { opacity: 1; color: #a3322a; font-weight: 600; }
+
+/* ---------- "add a film" tile in the pool ---------- */
+.add-tile {
+  min-height: 172px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  background: transparent; color: var(--paper); border: 2px dashed color-mix(in srgb, var(--paper) 65%, transparent); border-radius: 6px;
+  transition: background .2s, transform .2s;
+}
+.add-tile b { font-size: 20px; font-weight: 700; letter-spacing: .02em; }
+.add-tile span { font-family: var(--mono); font-size: 12px; opacity: .8; text-transform: none; }
+.add-tile:hover, .add-tile:focus-visible { background: color-mix(in srgb, var(--paper) 12%, transparent); transform: translateY(-2px); }
 
 /* ---------- sticky "you" bar ---------- */
 .youbar {

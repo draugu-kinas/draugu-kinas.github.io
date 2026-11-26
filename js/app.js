@@ -344,7 +344,12 @@ function renderBoard(quiet = false) {
             ? `everyone suggests up to ${LIMITS.movies} films and has ${LIMITS.votes} tickets to give.`
             : 'voting is closed. the host is choosing the feature.')),
         h('div', { class: 'pool' },
-          D.ranked.length ? D.ranked.filter(m => m !== winner).map((m, i) => ticket(m, D, { i }))
+          D.ranked.length ? [D.ranked.filter(m => m !== winner).map((m, i) => ticket(m, D, { i })),
+            open && (!data.me || D.myMovies < LIMITS.movies)
+              ? h('button', { class: 'add-tile', type: 'button', onclick: openAddFilm },
+                  h('b', null, '+ add a film'),
+                  h('span', null, data.me ? `${LIMITS.movies - D.myMovies} of ${LIMITS.movies} left` : `anyone can suggest up to ${LIMITS.movies}`))
+              : null]
             : h('div', { class: 'empty' }, 'the pool is empty. be the first to bring a film.',
                 h('div', { style: 'margin-top:14px' }, h('button', { class: 'btn accent', onclick: openAddFilm }, '+ add a film'))))),
 
@@ -359,10 +364,42 @@ function renderBoard(quiet = false) {
           h('h2', null, 'the guestbook', h('small', null, (data.participants?.length || 0) + ' signed')),
           h('p', null, 'who’s coming and what they’re carrying in.')),
         data.participants?.length
-          ? h('div', { class: 'guestbook' }, data.participants.map(p => h('div', null, h('b', null, p.nickname), h('span', null, p.bringing || ''))))
+          ? h('div', { class: 'guestbook' }, data.participants.map(p => h('div', null,
+              h('b', null, p.nickname),
+              h('span', null, p.bringing || ''),
+              p.id === data.me
+                ? confirmBtn('remove me', 'sure? tap again', () => leaveGuestbook())
+                : hostKeyStore.get() ? confirmBtn('remove', 'sure?', () => hostRemoveGuest(p)) : null)))
           : h('div', { class: 'empty' }, 'nobody has signed yet.'))),
     youbar(D, open));
   $app.replaceChildren(page);
+}
+
+// a small button that asks "sure?" before doing something you can't undo
+function confirmBtn(label, armedLabel, fn) {
+  let t;
+  const b = h('button', { class: 'gb-x', type: 'button', onclick: () => {
+    if (!b.classList.contains('armed')) {
+      b.classList.add('armed'); b.textContent = armedLabel;
+      t = setTimeout(() => { b.classList.remove('armed'); b.textContent = label; }, 3500);
+      return;
+    }
+    clearTimeout(t); b.disabled = true; fn();
+  } }, label);
+  return b;
+}
+
+async function leaveGuestbook() {
+  try { await store.leave(data.event.id); toast('you’re out of the guestbook, with your films and tickets.'); await reload(); softRerender(); }
+  catch (e) { toast(friendlyError(e)); }
+}
+
+async function hostRemoveGuest(p) {
+  try { await store.hostRemoveParticipant(hostKeyStore.get(), p.id); toast(p.nickname + ' was taken out of the guestbook.'); await reload(); softRerender(); }
+  catch (e) {
+    if (String(e.message).includes('bad_host_key')) { hostKeyStore.clear(); toast('your host key no longer works on this device.'); softRerender(); return; }
+    toast(friendlyError(e));
+  }
 }
 
 function fact(k, v) { return h('div', { class: 'fact' }, h('div', { class: 'k' }, k), h('div', { class: 'v' }, v)); }
@@ -446,7 +483,8 @@ function youbar(D, open) {
   if (!data.me) {
     return h('div', { class: 'youbar' },
       h('span', { class: 'hi' }, 'just looking?'),
-      h('button', { class: 'btn small', onclick: () => openJoin() }, 'sign the guestbook'));
+      h('button', { class: 'btn small', onclick: () => openJoin() }, 'sign the guestbook'),
+      data.event?.status === 'open' ? h('button', { class: 'btn small accent', onclick: openAddFilm }, '+ add a film') : null);
   }
   const left = LIMITS.votes - D.myVotes;
   return h('div', { class: 'youbar' },
