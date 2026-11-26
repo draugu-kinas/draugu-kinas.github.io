@@ -199,7 +199,21 @@ function renderRoom() {
       h('span', null, when)),
     h('div', { class: 'flash' }));
   applyRoom(room, previewRoom || ev?.room);
-  $app.replaceChildren(room);
+
+  /* the wall to our right: the pool, hung like a little gallery */
+  const hung = data.movies?.length ? derived().ranked.slice(0, 8) : [];
+  const frames = hung.map((m, i) => h('figure', { class: 'wframe', style: `--tilt:${[-1.2, .8, -.4, 1.1, .5, -.9, 1.3, -.6][i]}deg` },
+    poster(m), h('figcaption', null, m.title)));
+  while (frames.length < 4) frames.push(h('figure', { class: 'wframe empty', style: `--tilt:${[.6, -.8, 1, -.4][frames.length]}deg` },
+    h('div', { class: 'poster blank' }, 'your film here'), h('figcaption', null, '—')));
+  const side = h('div', { class: 'sidewall', 'aria-hidden': 'true' },
+    h('div', { class: 'sw-molding' }),
+    h('div', { class: 'sw-sign' }, 'the pool', h('small', null, (data.movies?.length || 0) + ((data.movies?.length || 0) === 1 ? ' film' : ' films'))),
+    h('div', { class: 'sw-frames' + (frames.length > 4 ? ' many' : '') }, frames));
+  const cam = h('div', { class: 'cam' }, room, side);
+  const veil = h('div', { class: 'veil' });
+  const stage = h('div', { class: 'stage' }, cam, veil);
+  $app.replaceChildren(stage);
 
   /* static noise */
   const ctx = canvas.getContext('2d');
@@ -235,19 +249,37 @@ function renderRoom() {
   const rot = setInterval(() => { if (buttons.classList.contains('on')) { line = (line + 1) % screenLines.length; sub.textContent = screenLines[line]; } }, 4200);
 
   function enter() {
-    // drift through the screen into the glow
-    if (room.classList.contains('entering')) return;
-    const r = screen.getBoundingClientRect(), R = room.getBoundingClientRect();
-    const ox = r.left + r.width / 2 - R.left, oy = r.top + r.height / 2 - R.top;
-    room.style.transformOrigin = `${ox}px ${oy}px`;
-    room.style.setProperty('--ox', ox + 'px'); room.style.setProperty('--oy', oy + 'px');
-    document.body.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--glow').trim();
+    if (stage.classList.contains('turning')) return;
     arriving = !reduce;
-    // freeze everything that repaints (static, flicker, blended light) so only one layer moves
-    cancelAnimationFrame(raf); clearInterval(rot);
+    if (reduce) { location.hash = '#/board'; return; }
+    // freeze everything that repaints so only the camera moves
+    cancelAnimationFrame(raf); clearInterval(rot); clearTimeout(typeT);
     room.classList.add('zooming');
-    requestAnimationFrame(() => requestAnimationFrame(() => room.classList.add('entering')));
-    setTimeout(() => { location.hash = '#/board'; }, reduce ? 0 : 1500);
+    const P = stage.clientWidth / 2;            // eye distance: the front wall exactly fills the view
+    stage.style.perspective = P + 'px';
+    cam.style.transformOrigin = `50% 50% ${P}px`; // turn around the viewer's eye, like turning your head
+    stage.classList.add('turning');
+    document.body.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--wall').trim();
+
+    const T0 = 380, TURN = 1500, DOLLY = 1250, ALL = TURN + DOLLY;
+    // 1. the question melts off the screen
+    screen.querySelector('.screen-content').animate(
+      [{ opacity: 1, filter: 'blur(0px)' }, { opacity: 0, filter: 'blur(8px)' }],
+      { duration: 480, easing: 'ease-in', fill: 'forwards' });
+    // 2. a soft blur as the head starts to turn, the front wall falls away edge-on
+    room.animate([{ filter: 'blur(0px)' }, { filter: 'blur(2.5px)', offset: .45 }, { filter: 'blur(0px)' }],
+      { duration: TURN, delay: T0 - 120, easing: 'ease-in-out' });
+    room.animate([{ opacity: 1 }, { opacity: 1, offset: .55 }, { opacity: 0 }], { duration: TURN, delay: T0, fill: 'forwards' });
+    side.animate([{ opacity: 0 }, { opacity: 1, offset: .4 }, { opacity: 1 }], { duration: TURN, delay: T0, fill: 'forwards' });
+    // 3. turn right, settle, then glide in toward the posters
+    const move = cam.animate([
+      { transform: 'translateZ(0px) rotateY(0deg)', easing: 'cubic-bezier(.62, 0, .3, 1)' },
+      { transform: 'translateZ(0px) rotateY(90deg)', offset: TURN / ALL, easing: 'cubic-bezier(.45, 0, .7, .2)' },
+      { transform: `translateZ(${Math.round(P * 0.72)}px) rotateY(90deg)` },
+    ], { duration: ALL, delay: T0, fill: 'forwards' });
+    // 4. the wall dissolves into the board
+    veil.animate([{ opacity: 0 }, { opacity: 0, offset: .72 }, { opacity: 1 }], { duration: ALL, delay: T0, fill: 'forwards' });
+    move.finished.then(() => { location.hash = '#/board'; });
   }
 
   cleanupRoute = () => { cancelAnimationFrame(raf); clearTimeout(typeT); clearTimeout(tuneT); clearInterval(rot); };

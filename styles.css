@@ -66,6 +66,68 @@ button { cursor: pointer; }
   transition: opacity .95s cubic-bezier(.4, 0, .2, 1);
 }
 
+/* ---------- the 3d stage: the room in front, the poster wall to the right ---------- */
+.stage {
+  position: relative; height: 100vh; height: 100svh; min-height: 520px; overflow: hidden;
+  perspective: 50vw;
+  /* what shows above/below the walls mid-turn: ceiling shadow and floor */
+  background: linear-gradient(color-mix(in srgb, var(--wood2) 70%, black) 0 8%, color-mix(in srgb, var(--wall) 55%, black) 8% 60%, color-mix(in srgb, var(--floor) 70%, black) 60%);
+}
+.cam { position: absolute; inset: 0; transform-style: preserve-3d; will-change: transform; }
+.cam > .room { position: absolute; inset: 0; height: auto; min-height: 0; backface-visibility: hidden; }
+.veil { position: absolute; inset: 0; background: var(--wall); opacity: 0; pointer-events: none; z-index: 5; }
+
+.sidewall {
+  position: absolute; top: 0; left: 100%; width: 100%; height: 100%;
+  transform-origin: 0 50%; transform: rotateY(-90deg); backface-visibility: hidden;
+  opacity: 0; overflow: hidden;
+  background:
+    /* floor boards running away from us: seams get wider apart toward the bottom */
+    linear-gradient(transparent 87%, rgba(0,0,0,.28) 87% 87.25%, transparent 87.25% 91%, rgba(0,0,0,.28) 91% 91.35%, transparent 91.35% 96.5%, rgba(0,0,0,.28) 96.5% 96.95%, transparent 96.95%),
+    linear-gradient(transparent 84%, color-mix(in srgb, var(--floor) 45%, black) 84%, color-mix(in srgb, var(--floor) 80%, black) 90%, var(--floor) 100%),
+    /* skirting + wainscot */
+    linear-gradient(transparent 72%, var(--wood2) 72% 73.4%, color-mix(in srgb, var(--wood) 90%, white) 73.4% 74%, var(--wood) 74% 82.5%, var(--wood2) 82.5% 84%, transparent 84%),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.07) 0 1.2px, transparent 1.6px) 0 0 / calc(var(--u)*3.2) calc(var(--u)*3.2),
+    repeating-linear-gradient(90deg, var(--wall) 0 calc(var(--u)*3.2), var(--wall2) calc(var(--u)*3.2) calc(var(--u)*6.4));
+}
+.stage:not(.turning) .sidewall { visibility: hidden; }
+.sidewall::after { /* vignette + light falling from above */
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 45% at 50% 38%, color-mix(in srgb, var(--glow) 16%, transparent), transparent 70%),
+    radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,.4) 100%);
+}
+.sw-molding { position: absolute; left: 0; right: 0; top: 0; height: calc(var(--u)*3.2); background: linear-gradient(var(--wood2), var(--wood) 55%, var(--wood2)); box-shadow: 0 calc(var(--u)*.4) calc(var(--u)*.8) rgba(0,0,0,.25); }
+.sw-sign {
+  position: absolute; left: 50%; top: 11%; transform: translateX(-50%); z-index: 1;
+  padding: calc(var(--u)*.6) calc(var(--u)*2.2);
+  background: linear-gradient(#e9cf8f, #c9a557); color: #3b2c14; border-radius: 2px;
+  box-shadow: 0 2px 0 #8a6a2a, 0 calc(var(--u)*.8) calc(var(--u)*1.6) rgba(0,0,0,.35);
+  font-weight: 600; letter-spacing: .3em; font-size: max(10px, calc(var(--u)*1.1)); text-align: center; white-space: nowrap;
+}
+.sw-sign small { display: block; font-weight: 500; letter-spacing: .35em; font-size: .7em; opacity: .75; margin-top: .3em; }
+.sw-frames {
+  --fw: min(12.5vw, 15.5vh);
+  position: absolute; left: 6%; right: 6%; top: 23%; height: 46%;
+  display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: calc(var(--fw)*.28) calc(var(--fw)*.34);
+}
+.wframe {
+  margin: 0; width: var(--fw); rotate: var(--tilt, 0deg);
+  padding: calc(var(--fw)*.07); background: color-mix(in srgb, var(--paper) 92%, var(--wood));
+  border: calc(var(--fw)*.05) solid var(--wood2); border-radius: 2px;
+  box-shadow: 0 calc(var(--fw)*.06) calc(var(--fw)*.14) rgba(0,0,0,.45);
+}
+.wframe .poster { margin: 0; width: 100%; aspect-ratio: 2 / 3; box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }
+.wframe .poster.type b { font-size: calc(var(--fw)*.12); }
+.wframe .poster.type span { font-size: calc(var(--fw)*.07); }
+.wframe .poster.blank { display: grid; place-items: center; padding: 8%; text-align: center; background: color-mix(in srgb, var(--paper) 80%, var(--wall)); color: color-mix(in srgb, var(--ink) 55%, transparent); font-family: var(--mono); font-size: calc(var(--fw)*.09); }
+.wframe figcaption { margin-top: calc(var(--fw)*.05); font-size: calc(var(--fw)*.075); text-align: center; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sw-frames.many { --fw: min(9.5vw, 10.5vh); }
+@media (orientation: portrait) {
+  .sw-frames, .sw-frames.many { --fw: min(32vw, 14vh); top: 20%; height: 50%; left: 50%; right: auto; translate: -50% 0; width: calc(var(--fw) * 2.6); }
+  .wframe:nth-child(n+5) { display: none; }
+}
+
 /* wallpaper: soft vertical stripes + tiny diamond print */
 .wall {
   position: absolute; inset: 0 0 34% 0;
