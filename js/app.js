@@ -32,7 +32,8 @@ function toast(msg) {
 /* ---------------- formatting ---------------- */
 const fmtDay = (iso, opts = { weekday: 'short', day: 'numeric', month: 'long' }) =>
   new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', opts).toLowerCase();
-const hash = s => [...(s || '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7);
+const localToday = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const hash = s =>[...(s || '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7);
 const posterColors = ['var(--accent)', 'var(--rug2)', 'var(--rug1)', 'var(--wood2)', 'var(--wall2)'];
 
 function poster(m, cls = 'poster') {
@@ -60,6 +61,7 @@ const ticketIcon = () => {
 let store, data = { event: null };
 let cleanupRoute = () => {};
 let pendingRender = false;
+let arriving = false; // true right after zooming through the tv
 
 async function reload() {
   try { data = await store.load(); }
@@ -73,10 +75,15 @@ async function render() {
   cleanupRoute(); cleanupRoute = () => {};
   const r = route();
   window.scrollTo({ top: 0 });
-  if (r === 'board') return renderBoard();
-  if (r === 'archive') return renderArchive();
-  if (r === 'host') return renderHost();
-  return renderRoom();
+  if (r === 'board') renderBoard();
+  else if (r === 'archive') renderArchive();
+  else if (r === 'host') renderHost();
+  else renderRoom();
+  if (arriving) {
+    arriving = false;
+    // let the glow behind the page fade back to the wall colour
+    requestAnimationFrame(() => { document.body.style.backgroundColor = ''; });
+  }
 }
 
 function softRerender() {
@@ -85,7 +92,7 @@ function softRerender() {
   if (a && $app.contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) { pendingRender = true; return; }
   if (document.querySelector('.modal-back')) { pendingRender = true; return; }
   const y = window.scrollY;
-  if (route() === 'board') { renderBoard(); window.scrollTo({ top: y }); }
+  if (route() === 'board') { renderBoard(true); window.scrollTo({ top: y }); }
 }
 document.addEventListener('focusout', () => setTimeout(() => { if (pendingRender) { pendingRender = false; softRerender(); } }, 50));
 
@@ -176,11 +183,16 @@ function renderRoom() {
   const rot = setInterval(() => { if (buttons.classList.contains('on')) { line = (line + 1) % screenLines.length; sub.textContent = screenLines[line]; } }, 4200);
 
   function enter() {
-    // zoom into the screen
+    // drift through the screen into the glow
+    if (room.classList.contains('entering')) return;
     const r = screen.getBoundingClientRect(), R = room.getBoundingClientRect();
-    room.style.transformOrigin = `${r.left + r.width / 2 - R.left}px ${r.top + r.height / 2 - R.top}px`;
+    const ox = r.left + r.width / 2 - R.left, oy = r.top + r.height / 2 - R.top;
+    room.style.transformOrigin = `${ox}px ${oy}px`;
+    room.style.setProperty('--ox', ox + 'px'); room.style.setProperty('--oy', oy + 'px');
+    document.body.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--glow').trim();
+    arriving = !reduce;
     room.classList.add('entering');
-    setTimeout(() => { location.hash = '#/board'; }, reduce ? 0 : 1050);
+    setTimeout(() => { location.hash = '#/board'; }, reduce ? 0 : 1500);
   }
 
   cleanupRoute = () => { cancelAnimationFrame(raf); clearTimeout(typeT); clearTimeout(tuneT); clearInterval(rot); };
@@ -211,7 +223,7 @@ function topnav(extra) {
       route() !== 'host' ? h('a', { href: '#/host' }, 'host') : null));
 }
 
-function renderBoard() {
+function renderBoard(quiet = false) {
   const ev = data.event;
   if (!ev) { $app.replaceChildren(h('div', { class: 'loading' }, 'no movie night is open right now.')); return; }
   const D = derived();
@@ -220,7 +232,7 @@ function renderBoard() {
 
   const when = ev.final_date ? fmtDay(ev.final_date) + (ev.final_time ? ' · ' + ev.final_time : '') : 'tbd — pick below';
 
-  const page = h('div', { class: 'page' },
+  const page = h('div', { class: 'page' + (quiet ? ' quiet' : arriving ? ' arrive' : '') },
     h('div', { class: 'page-top' }),
     h('div', { class: 'wrap' },
       topnav(),
@@ -315,16 +327,18 @@ function dateCards(D) {
   const dv = data.dateVotes || [];
   const by = id => dv.filter(v => v.date_option_id === id).map(v => v.participant_id);
   const best = Math.max(0, ...opts.map(o => by(o.id).length));
-  const today = new Date().toISOString().slice(0, 10);
-  const input = h('input', { type: 'date', min: today, 'aria-label': 'suggest a date' });
-  input.addEventListener('change', async () => {
-    if (!input.value) return;
+  const today = localToday();
+  // starts on today; nothing is sent until "add this day" is pressed,
+  // so typing a year digit by digit can't submit a half-typed date
+  const input = h('input', { type: 'date', min: today, value: today, 'aria-label': 'suggest a date' });
+  const addDay = h('button', { class: 'btn small', type: 'button', onclick: async () => {
     const day = input.value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day < today) { toast('pick a day from today on.'); return input.focus(); }
     await needJoin(async () => {
-      try { await store.proposeDate(data.event.id, day); toast('date added — you’re marked as free.'); input.value = ''; input.blur(); await reload(); softRerender(); }
+      try { await store.proposeDate(data.event.id, day); toast('date added — you’re marked as free.'); input.blur(); await reload(); softRerender(); }
       catch (e) { toast(friendlyError(e)); }
     });
-  });
+  } }, 'add this day');
   return h('div', { class: 'dates' },
     opts.map(o => {
       const who = by(o.id); const on = who.includes(data.me);
@@ -338,7 +352,7 @@ function dateCards(D) {
         h('div', { class: 'wd' }, fmtDay(o.day, { weekday: 'long' })),
         h('div', { class: 'cnt' }, who.length ? who.length + ' can: ' + who.map(id => D.nick[id] || '?').join(', ') : 'nobody yet'));
     }),
-    h('div', { class: 'datecard add' }, h('span', null, '+ suggest a day'), input));
+    h('div', { class: 'datecard add' }, h('span', null, '+ suggest a day'), input, addDay));
 }
 
 function youbar(D, open) {
@@ -532,14 +546,14 @@ async function renderArchive() {
 /* =====================================================================
    HOST
    ===================================================================== */
-async function renderHost() {
+async function renderHost(quiet = false) {
   const key = hostKeyStore.get();
   if (!key) return hostLogin();
   const ev = data.event;
   if (!ev) { $app.replaceChildren(h('div', { class: 'loading' }, 'no open night.')); return; }
   const D = derived();
   const save = async (patch, msg = 'saved.') => {
-    try { await store.hostUpdate(key, ev.id, patch); await reload(); toast(msg); renderHost(); }
+    try { await store.hostUpdate(key, ev.id, patch); await reload(); toast(msg); renderHost(true); }
     catch (e) { if (String(e.message).includes('bad_host_key')) { hostKeyStore.clear(); return hostLogin('that key no longer works.'); } toast(friendlyError(e)); }
   };
   const armed = (label, armedLabel, fn) => {
@@ -557,12 +571,12 @@ async function renderHost() {
     location: h('input', { value: ev.location || '' }),
     bring: h('input', { value: ev.bring || '' }),
   };
-  const dateIn = h('input', { type: 'date', value: ev.final_date || '' });
+  const dateIn = h('input', { type: 'date', value: ev.final_date || localToday() });
   const timeIn = h('input', { type: 'time', value: ev.final_time || '' });
   const dv = data.dateVotes || [];
   const optRanked = [...(data.dateOptions || [])].map(o => ({ o, n: dv.filter(v => v.date_option_id === o.id).length })).sort((a, b) => b.n - a.n);
 
-  const page = h('div', { class: 'page' }, h('div', { class: 'page-top' }), h('div', { class: 'wrap' },
+  const page = h('div', { class: 'page' + (quiet ? ' quiet' : '') }, h('div', { class: 'page-top' }), h('div', { class: 'wrap' },
     topnav(),
     h('header', { class: 'titlecard' },
       h('div', { class: 'kicker' }, 'host only'),
@@ -610,7 +624,7 @@ async function renderHost() {
             ev.winner_movie_id === m.id
               ? h('button', { class: 'btn small', type: 'button', onclick: () => save({ winner_movie_id: '' }, 'feature un-picked.') }, 'unpick')
               : h('button', { class: 'btn small', type: 'button', onclick: () => save({ winner_movie_id: m.id }, m.title + ' is the feature.') }, 'feature'),
-            armed('remove', 'sure?', async () => { try { await store.hostRemoveMovie(key, m.id); await reload(); toast('removed.'); renderHost(); } catch (e) { toast(friendlyError(e)); } }))))) : h('p', { class: 'note-small' }, 'no films yet.')),
+            armed('remove', 'sure?', async () => { try { await store.hostRemoveMovie(key, m.id); await reload(); toast('removed.'); renderHost(true); } catch (e) { toast(friendlyError(e)); } }))))) : h('p', { class: 'note-small' }, 'no films yet.')),
 
       h('div', { class: 'card' },
         h('h3', null, 'wrap up the night'),
@@ -667,7 +681,12 @@ async function hostLogin(msg) {
     return;
   }
   await reload();
-  store.subscribe(async () => { await reload(); softRerender(); });
+  // only redraw when something actually changed (polls and tab switches used to flash the page)
+  store.subscribe(async () => {
+    const before = JSON.stringify(data);
+    await reload();
+    if (JSON.stringify(data) !== before) softRerender();
+  });
   window.addEventListener('hashchange', render);
   render();
 })();
