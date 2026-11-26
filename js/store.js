@@ -320,7 +320,7 @@ export class DemoStore {
     }
     ev.status = 'archived'; ev.archived_at = new Date().toISOString();
     const next = { id: uid(), number: ev.number + 1, title: 'movie night no. ' + (ev.number + 1), tagline: null,
-      theme: ev.theme, location: ev.location, bring: ev.bring, final_date: null, final_time: null,
+      theme: ev.theme, colors: ev.colors || null, location: ev.location, bring: ev.bring, final_date: null, final_time: null,
       status: 'open', winner_movie_id: null, created_at: new Date().toISOString() };
     db.events.push(next); this.save(db); return next.id;
   }

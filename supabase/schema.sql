@@ -12,6 +12,7 @@ create table if not exists events (
   title            text not null default 'movie night',
   tagline          text,
   theme            text not null default 'moss',
+  colors           jsonb,           -- host's fine-tuned colours on top of the theme
   location         text,
   bring            text,
   final_date       date,
@@ -145,6 +146,18 @@ begin
   end if;
 end $$;
 
+-- keeps only known colour slots with #rrggbb values; null when nothing is left
+create or replace function _clean_colors(p jsonb) returns jsonb
+language sql immutable set search_path = public as $$
+  select case when jsonb_typeof(p) = 'object' then (
+    select nullif(coalesce(jsonb_object_agg(key, value), '{}'::jsonb), '{}'::jsonb)
+      from jsonb_each(p)
+     where key in ('wall','wood','floor','accent','accent2','paper','ink','rug1','rug2','rug3','glow')
+       and jsonb_typeof(value) = 'string' and (value #>> '{}') ~ '^#[0-9a-fA-F]{6}$'
+  ) end
+$$;
+
+revoke execute on function _clean_colors(jsonb)     from public, anon, authenticated;
 revoke execute on function _me(uuid, text)          from public, anon, authenticated;
 revoke execute on function _require_open(uuid)      from public, anon, authenticated;
 revoke execute on function _require_host(text)      from public, anon, authenticated;
@@ -301,6 +314,7 @@ begin
     title           = coalesce(p_patch->>'title', title),
     tagline         = case when p_patch ? 'tagline'    then nullif(p_patch->>'tagline','')    else tagline end,
     theme           = coalesce(p_patch->>'theme', theme),
+    colors          = case when p_patch ? 'colors'     then _clean_colors(p_patch->'colors') else colors end,
     location        = case when p_patch ? 'location'   then nullif(p_patch->>'location','')   else location end,
     bring           = case when p_patch ? 'bring'      then nullif(p_patch->>'bring','')      else bring end,
     final_date      = case when p_patch ? 'final_date' then nullif(p_patch->>'final_date','')::date else final_date end,
@@ -334,8 +348,8 @@ begin
   update events set status = 'archived', archived_at = now(),
          winner_movie_id = coalesce(winner_movie_id, top)
    where id = p_event;
-  insert into events(number, title, theme, location, bring)
-    values (e.number + 1, 'movie night no. ' || (e.number + 1), e.theme, e.location, e.bring)
+  insert into events(number, title, theme, colors, location, bring)
+    values (e.number + 1, 'movie night no. ' || (e.number + 1), e.theme, e.colors, e.location, e.bring)
     returning id into new_id;
   return new_id;
 end $$;

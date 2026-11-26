@@ -1,6 +1,6 @@
 import { createStore, friendlyError, LIMITS, lastNickname, hostKeyStore } from './store.js';
 import { searchFilms } from './search.js';
-import { THEMES, applyTheme } from './themes.js';
+import { THEMES, COLOR_SLOTS, themeColors, applyTheme } from './themes.js';
 
 /* ---------------- tiny DOM helper (always textContent, never innerHTML for data) ---------------- */
 function h(tag, props, ...kids) {
@@ -62,11 +62,13 @@ let store, data = { event: null };
 let cleanupRoute = () => {};
 let pendingRender = false;
 let arriving = false; // true right after zooming through the tv
+let previewColors = null; // unsaved colours the host is trying out on the host page
+const applyEventTheme = () => { if (data.event) applyTheme(data.event.theme, previewColors || data.event.colors); };
 
 async function reload() {
   try { data = await store.load(); }
   catch (e) { console.error(e); toast('could not reach the board. check your connection.'); }
-  if (data.event) applyTheme(data.event.theme);
+  applyEventTheme();
 }
 
 function route() { return (location.hash.replace(/^#\/?/, '') || 'room').split('?')[0]; }
@@ -513,7 +515,7 @@ function openAddFilm() {
    ARCHIVE
    ===================================================================== */
 async function renderArchive() {
-  if (data.event) applyTheme(data.event.theme);
+  applyEventTheme();
   $app.replaceChildren(h('div', { class: 'loading' }, 'rewinding the tapes…'));
   let nights = [];
   try { nights = await store.archive(); } catch (e) { toast(friendlyError(e)); }
@@ -527,7 +529,7 @@ async function renderArchive() {
     nights.length ? nights.map(n => {
       const w = n.movies.find(m => m.id === n.winner_movie_id) || n.movies[0];
       const nick = Object.fromEntries(n.participants.map(p => [p.id, p.nickname]));
-      const t = THEMES[n.theme] || THEMES.moss;
+      const t = themeColors(n.theme, n.colors);
       const day = n.final_date ? fmtDay(n.final_date, { day: 'numeric', month: 'long', year: 'numeric' }) : (n.archived_at ? fmtDay(n.archived_at.slice(0, 10), { month: 'long', year: 'numeric' }) : '');
       return h('article', { class: 'reel', style: `--swatch:${t.wall}` },
         w ? poster(w) : h('div', { class: 'poster type', style: `background:${t.wall}` }, h('b', null, '—'), h('span')),
@@ -595,10 +597,11 @@ async function renderHost(quiet = false) {
       h('div', { class: 'card' },
         h('h3', null, 'the look'),
         h('div', { class: 'themes' }, Object.entries(THEMES).map(([k, t]) => h('button', {
-          class: 'theme-sw' + (ev.theme === k ? ' on' : ''), type: 'button',
-          onclick: () => { applyTheme(k); save({ theme: k }, 'new wallpaper: ' + t.name + '.'); },
+          class: 'theme-sw' + (ev.theme === k && !ev.colors ? ' on' : ''), type: 'button',
+          onclick: () => { previewColors = null; applyTheme(k); save({ theme: k, colors: null }, 'new wallpaper: ' + t.name + '.'); },
         }, h('div', { class: 'bars' }, [t.wall, t.wood, t.accent, t.accent2, t.rug1].map(c => h('i', { style: 'background:' + c }))), t.name))),
         h('p', { class: 'note-small' }, 'changes the room, the board and the tv glow for everyone.'),
+        colorPicker(ev, save),
         h('h3', { style: 'margin-top:24px' }, 'the date'),
         optRanked.length ? h('ul', { class: 'hostlist' }, optRanked.map(({ o, n }) => h('li', null,
           h('span', null, fmtDay(o.day)), h('span', { class: 'n' }, n + ' can'),
@@ -637,6 +640,41 @@ async function renderHost(quiet = false) {
           h('button', { class: 'linkish', style: 'color:var(--ink)', type: 'button', onclick: () => { hostKeyStore.clear(); hostLogin(); } }, 'forget host key on this device'),
           store.demo ? h('button', { class: 'linkish', style: 'color:var(--ink)', type: 'button', onclick: async () => { store.reset(); hostKeyStore.clear(); await reload(); toast('demo reset.'); hostLogin(); } }, 'reset demo data') : null)))));
   $app.replaceChildren(page);
+  // leaving the host page drops any colours that were tried but not saved
+  cleanupRoute = () => { if (previewColors) { previewColors = null; applyEventTheme(); } };
+}
+
+// fine-tune the current theme colour by colour; previews live, saves for everyone
+function colorPicker(ev, save) {
+  const base = THEMES[ev.theme] || THEMES.moss;
+  const current = themeColors(ev.theme, ev.colors);
+  const draft = Object.fromEntries(COLOR_SLOTS.map(([k]) => [k, current[k]]));
+  const saveBtn = h('button', { class: 'btn primary', type: 'button', disabled: true, onclick: () => {
+    // store only what differs from the preset, so switching presets later stays clean
+    const diff = Object.fromEntries(Object.entries(draft).filter(([k, v]) => v !== base[k]));
+    previewColors = null;
+    save({ colors: Object.keys(diff).length ? diff : null }, 'colours saved.');
+  } }, 'save colours');
+  const swatches = COLOR_SLOTS.map(([k, label]) => {
+    const input = h('input', { type: 'color', value: draft[k], 'aria-label': label });
+    input.addEventListener('input', () => {
+      draft[k] = input.value.toLowerCase();
+      previewColors = { ...draft };
+      applyTheme(ev.theme, previewColors);
+      saveBtn.disabled = false;
+    });
+    return h('label', { class: 'swatch' }, input, h('span', null, label));
+  });
+  return h('div', null,
+    h('h3', { style: 'margin-top:24px' }, 'fine-tune the colours'),
+    h('p', { class: 'note-small', style: 'margin:0 0 10px' }, 'tap a circle to change it. you see it right away; others see it once you save.'),
+    h('div', { class: 'swatches' }, swatches),
+    h('div', { class: 'actions' },
+      ev.colors || previewColors ? h('button', { class: 'btn small', type: 'button', onclick: () => {
+        previewColors = null;
+        save({ colors: null }, 'back to ' + base.name + '.');
+      } }, 'back to ' + base.name) : null,
+      saveBtn));
 }
 
 async function hostLogin(msg) {

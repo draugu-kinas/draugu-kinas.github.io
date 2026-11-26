@@ -603,6 +603,12 @@ section.block { margin: 0 0 56px; }
 .theme-sw.on { border-color: var(--ink); }
 .theme-sw .bars { display: flex; height: 26px; border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
 .theme-sw .bars i { flex: 1; }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.swatch { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; background: #fffdf6; font-size: 12px; cursor: pointer; }
+.swatch input[type=color] { flex: none; width: 28px; height: 28px; padding: 0; border: 1px solid rgba(0,0,0,.2); border-radius: 50%; background: none; cursor: pointer; -webkit-appearance: none; appearance: none; }
+.swatch input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+.swatch input[type=color]::-webkit-color-swatch { border: 0; border-radius: 50%; }
+.swatch input[type=color]::-moz-color-swatch { border: 0; border-radius: 50%; }
 .hostlist { list-style: none; margin: 0; padding: 0; }
 .hostlist li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); }
 .hostlist .n { font-family: var(--mono); font-size: 13px; opacity: .7; text-transform: none; white-space: nowrap; }

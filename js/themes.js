@@ -38,8 +38,29 @@ export const THEMES = {
   },
 };
 
-export function applyTheme(key) {
-  const t = THEMES[key] || THEMES.moss;
+// colour slots the host can fine-tune on the host page (keys match the theme fields above)
+export const COLOR_SLOTS = [
+  ['wall', 'wallpaper'], ['wood', 'wood'], ['floor', 'floor'], ['paper', 'paper'], ['ink', 'ink'],
+  ['accent', 'accent'], ['accent2', 'accent 2'], ['rug1', 'rug 1'], ['rug2', 'rug 2'], ['rug3', 'rug 3'],
+  ['glow', 'tv glow'],
+];
+const HEX = /^#[0-9a-f]{6}$/i;
+const shade = (hex, f) => '#' + [1, 3, 5].map(i => Math.round(parseInt(hex.slice(i, i + 2), 16) * f).toString(16).padStart(2, '0')).join('');
+
+// a preset theme with the host's overrides on top; stripe/shadow tones follow the picked colour
+export function themeColors(key, colors) {
+  const t = { ...(THEMES[key] || THEMES.moss) };
+  for (const [k] of COLOR_SLOTS) {
+    const v = colors?.[k];
+    if (typeof v === 'string' && HEX.test(v)) t[k] = v.toLowerCase();
+  }
+  if (t.wall !== (THEMES[key] || THEMES.moss).wall) t.wall2 = shade(t.wall, 0.91);
+  if (t.wood !== (THEMES[key] || THEMES.moss).wood) t.wood2 = shade(t.wood, 0.77);
+  return t;
+}
+
+export function applyTheme(key, colors) {
+  const t = themeColors(key, colors);
   const root = document.documentElement.style;
   for (const [k, v] of Object.entries(t)) if (k !== 'name') root.setProperty('--' + k, v);
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t.wall);
